@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 
-// // POST
-// // /houses
-// export const PostNewHouse = (req: Request, res: Response) => {
-//   res.send('PostNewHouse success!');
-// };
+// POST
+// /houses
+export const PostNewHouse = (req: Request, res: Response) => {
+  res.send('PostNewHouse success!');
+};
 
 // GET
 // /houses
@@ -18,11 +18,11 @@ export const PostSearchHouse = (req: Request, res: Response) => {
   res.send('PostSearchHouse success!');
 };
 
-// POST
-// /houses/:id
-export const PostHouse = (req: Request, res: Response) => {
-  res.send('PostHouse success!');
-};
+// // POST
+// // /houses/:id
+// export const PostHouse = (req: Request, res: Response) => {
+//   res.send('PostHouse success!');
+// };
 
 // GET
 // /houses/:id
