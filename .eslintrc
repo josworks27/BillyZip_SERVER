@@ -1,9 +1,37 @@
+// {
+//   "parser": "@typescript-eslint/parser",
+//   "plugins": [
+//     "@typescript-eslint"
+//   ],
+//   "extends": [
+//     "airbnb-base",
+//     "plugin:@typescript-eslint/eslint-recommended"
+//   ],
+//   "rules": {
+//     "no-console": 0,
+//     "global-require": 0,
+//     "function-paren-newline": 0,
+//     "implicit-arrow-linebreak": 0
+//   }
+// }
+
 {
-  "extends": "airbnb-base",
+  "parser": "@typescript-eslint/parser",
+  "extends": ["plugin:@typescript-eslint/recommended"],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
   "rules": {
-    "no-console": 0,
-    "global-require": 0,
-    "function-paren-newline": 0,
-    "implicit-arrow-linebreak": 0
+    "semi": ["error", "always"],
+    "quotes": ["error", "single"],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": 1,
+    "@typescript-eslint/no-inferrable-types": [
+      "warn", {
+        "ignoreParameters": true
+      }
+    ],
+    "@typescript-eslint/no-unused-vars": "warn"
   }
 }
