@@ -46,8 +46,8 @@ app.put('/users/:id/my-info', usersController.PutMyInfo);
 
 // 2. housesController
 app.get('/houses', housesController.GetAllHouses);
+app.post('/houses', housesController.PostNewHouse);
 app.post('/houses/search', housesController.PostSearchHouse);
-app.post('/houses/:id', housesController.PostHouse);
 app.get('/houses/:id', housesController.GetHouse);
 app.put('/houses/:id', housesController.PutHouse);
 app.delete('/houses/:id', housesController.DeleteHouse);
