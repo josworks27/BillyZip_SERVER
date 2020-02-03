@@ -1,26 +1,27 @@
-import express from 'express';
-import compression from 'compression';
-import bodyParser from 'body-parser';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import morgan from 'morgan';
+import * as express from 'express';
+import * as compression from 'compression';
+import * as bodyParser from 'body-parser';
+import * as cookieParser from 'cookie-parser';
+import * as cors from 'cors';
+import * as morgan from 'morgan';
 import 'dotenv/config';
 
-import * as usersController from './controllers/users';
-import * as housesController from './controllers/houses';
-import * as applicationController from './controllers/application';
-import * as favsController from './controllers/favs';
-import * as paymentController from './controllers/payment';
+import { usersRouter } from './routes/users';
+import { housesRouter } from './routes/houses';
+import { favsRouter } from './routes/favs';
+import { applicationRouter } from './routes/application';
+import { paymentRouter } from './routes/payment';
 
 // Create express server
 const app = express();
 
-// middleware
+// middlewares
 app.set('port', process.env.PORT || 3000);
 app.use(compression());
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
+  
     extended: false,
   }),
 );
@@ -35,33 +36,33 @@ app.use(cors());
 //     }),
 //   );
 
-// Controllers
-// 1. usersController
-app.post('/users/singup', usersController.PostSignup);
-app.post('/users/singin', usersController.PostSignin);
-app.get('/users/signout', usersController.GetSignout);
-app.get('/users/:id/current-info', usersController.GetCurrentInfo);
-app.get('/users/:id/list', usersController.GetList);
-app.put('/users/:id/my-info', usersController.PutMyInfo);
-
-// 2. housesController
-app.get('/houses', housesController.GetAllHouses);
-app.post('/houses', housesController.PostNewHouse);
-app.post('/houses/search', housesController.PostSearchHouse);
-app.get('/houses/:id', housesController.GetHouse);
-app.put('/houses/:id', housesController.PutHouse);
-app.delete('/houses/:id', housesController.DeleteHouse);
-
-// 3. applicationController
-app.post('/application', applicationController.PostApplication);
-app.get('/application', applicationController.GetApplication);
-
-// 4. favsController
-app.post('/favs', favsController.PostFavs);
-app.get('/favs', favsController.GetFavs);
-
-// 5. paymentController
-app.post('/payment', paymentController.PostPayment);
-app.get('/payment', paymentController.GetPayment);
+// Routes
+app.use('/users', usersRouter);
+app.use('/houses', housesRouter);
+app.use('/application', applicationRouter);
+app.use('/favs', favsRouter);
+app.use('/payment', paymentRouter);
 
 export default app;
+
+// import 'reflect-metadata';
+// import { createConnection } from 'typeorm';
+// import { User } from './entity/User';
+
+// createConnection()
+//   .then(async (connection) => {
+//     console.log('Inserting a new user into the database...');
+//     const user = new User();
+//     user.firstName = 'Timber';
+//     user.lastName = 'Saw';
+//     user.age = 25;
+//     await connection.manager.save(user);
+//     console.log('Saved a new user with id: ' + user.id);
+
+//     console.log('Loading users from the database...');
+//     const users = await connection.manager.find(User);
+//     console.log('Loaded users: ', users);
+
+//     console.log('Here you can setup and run express/koa/any other framework.');
+//   })
+//   .catch((error) => console.log(error));
