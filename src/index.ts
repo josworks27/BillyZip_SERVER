@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import morgan from 'morgan';
-require('dotenv').config();
+import 'dotenv/config';
 
 import * as usersController from './controllers/users';
 import * as housesController from './controllers/houses';
