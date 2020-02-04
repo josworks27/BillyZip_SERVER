@@ -1,39 +1,29 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const compression_1 = __importDefault(require("compression"));
-const body_parser_1 = __importDefault(require("body-parser"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const cors_1 = __importDefault(require("cors"));
-const morgan_1 = __importDefault(require("morgan"));
-require('dotenv').config();
-const usersController = __importStar(require("./controllers/users"));
-const housesController = __importStar(require("./controllers/houses"));
-const applicationController = __importStar(require("./controllers/application"));
-const favsController = __importStar(require("./controllers/favs"));
-const paymentController = __importStar(require("./controllers/payment"));
+const express = require("express");
+const compression = require("compression");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const morgan = require("morgan");
+require("dotenv/config");
+const users_1 = require("./routes/users");
+const houses_1 = require("./routes/houses");
+const favs_1 = require("./routes/favs");
+const application_1 = require("./routes/application");
+const payment_1 = require("./routes/payment");
 // Create express server
-const app = express_1.default();
-// middleware
+const app = express();
+// middlewares
 app.set('port', process.env.PORT || 3000);
-app.use(compression_1.default());
-app.use(body_parser_1.default.json());
-app.use(body_parser_1.default.urlencoded({
+app.use(compression());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
     extended: false,
 }));
-app.use(cookie_parser_1.default());
-app.use(morgan_1.default('dev'));
-app.use(cors_1.default());
+app.use(cookieParser());
+app.use(morgan('dev'));
+app.use(cors());
 //   app.use(
 //     cors({
 //       origin: ['http://stroll1.s3-website.ap-northeast-2.amazonaws.com'],
@@ -41,28 +31,29 @@ app.use(cors_1.default());
 //       credentials: true,
 //     }),
 //   );
-// Controllers
-// 1. usersController
-app.post('/users/singup', usersController.PostSignup);
-app.post('/users/singin', usersController.PostSignin);
-app.get('/users/signout', usersController.GetSignout);
-app.get('/users/:id/current-info', usersController.GetCurrentInfo);
-app.get('/users/:id/list', usersController.GetList);
-app.put('/users/:id/my-info', usersController.PutMyInfo);
-// 2. housesController
-app.get('/houses', housesController.GetAllHouses);
-app.post('/houses', housesController.PostNewHouse);
-app.post('/houses/search', housesController.PostSearchHouse);
-app.get('/houses/:id', housesController.GetHouse);
-app.put('/houses/:id', housesController.PutHouse);
-app.delete('/houses/:id', housesController.DeleteHouse);
-// 3. applicationController
-app.post('/application', applicationController.PostApplication);
-app.get('/application', applicationController.GetApplication);
-// 4. favsController
-app.post('/favs', favsController.PostFavs);
-app.get('/favs', favsController.GetFavs);
-// 5. paymentController
-app.post('/payment', paymentController.PostPayment);
-app.get('/payment', paymentController.GetPayment);
+// Routes
+app.use('/users', users_1.usersRouter);
+app.use('/houses', houses_1.housesRouter);
+app.use('/application', application_1.applicationRouter);
+app.use('/favs', favs_1.favsRouter);
+app.use('/payment', payment_1.paymentRouter);
 exports.default = app;
+// import 'reflect-metadata';
+// import { createConnection } from 'typeorm';
+// import { User } from './entity/User';
+// createConnection()
+//   .then(async (connection) => {
+//     console.log('Inserting a new user into the database...');
+//     const user = new User();
+//     user.firstName = 'Timber';
+//     user.lastName = 'Saw';
+//     user.age = 25;
+//     await connection.manager.save(user);
+//     console.log('Saved a new user with id: ' + user.id);
+//     console.log('Loading users from the database...');
+//     const users = await connection.manager.find(User);
+//     console.log('Loaded users: ', users);
+//     console.log('Here you can setup and run express/koa/any other framework.');
+//   })
+//   .catch((error) => console.log(error));
+//# sourceMappingURL=index.js.map

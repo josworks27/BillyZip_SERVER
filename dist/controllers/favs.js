@@ -10,3 +10,4 @@ exports.PostFavs = (req, res) => {
 exports.GetFavs = (req, res) => {
     res.send('GetFavs success!');
 };
+//# sourceMappingURL=favs.js.map

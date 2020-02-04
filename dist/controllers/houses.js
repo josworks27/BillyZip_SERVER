@@ -35,3 +35,4 @@ exports.PutHouse = (req, res) => {
 exports.DeleteHouse = (req, res) => {
     res.send('DeleteHouse success!');
 };
+//# sourceMappingURL=houses.js.map

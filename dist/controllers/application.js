@@ -10,3 +10,4 @@ exports.PostApplication = (req, res) => {
 exports.GetApplication = (req, res) => {
     res.send('GetApplication success!');
 };
+//# sourceMappingURL=application.js.map

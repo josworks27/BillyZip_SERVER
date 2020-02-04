@@ -10,3 +10,4 @@ exports.PostPayment = (req, res) => {
 exports.GetPayment = (req, res) => {
     res.send('GetPayment success!');
 };
+//# sourceMappingURL=payment.js.map

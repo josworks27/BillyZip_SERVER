@@ -35,3 +35,4 @@ exports.GetMyInfo = (req, res) => {
 exports.PutMyInfo = (req, res) => {
     res.send('PutMyInfo success!');
 };
+//# sourceMappingURL=users.js.map
