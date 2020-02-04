@@ -1,4 +1,11 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class Amenity extends BaseEntity {
@@ -28,6 +35,12 @@ export class Amenity extends BaseEntity {
 
   @Column({ type: 'boolean', nullable: true })
   allowPet!: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 
   @Column({ type: 'boolean', nullable: true })
   isActive!: boolean;

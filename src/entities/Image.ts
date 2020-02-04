@@ -1,16 +1,38 @@
-import { BaseEntity, Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  BaseEntity,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
+
+import { House } from './House';
 
 @Entity()
-export class Review extends BaseEntity {
+export class Image extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: 'varchar' })
+  @Column()
   filePath!: string;
 
-  @Column({ type: 'varchar' })
+  @Column()
   fileName!: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 
   @Column({ type: 'boolean' })
   isActive!: boolean;
+
+  @ManyToOne(
+    (type) => House,
+    (house) => house.images, { nullable:false }
+  )
+  house!: House;
 }
