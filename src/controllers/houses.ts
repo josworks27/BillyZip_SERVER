@@ -46,8 +46,6 @@ export const PostHouse = async (req: Request, res: Response) => {
     allowPet
   } = req.body;
 
-  console.log(req.body);
-
   // 새로운 Amenity 생성하기
   const newAmenity = new Amenity();
   newAmenity.secondFloor = secondFloor;
