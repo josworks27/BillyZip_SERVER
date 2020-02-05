@@ -4,7 +4,7 @@
   "description": "Final Project - BillyZip",
   "main": "server.js",
   "scripts": {
-    "start": "node --inspect=4000 -r ts-node/register ./src/index.ts",
+    "start": "node --inspect=4000 -r ts-node/register ./src/server.ts",
     "start:watch": "nodemon",
     "build": "tsc",
     "typeorm": "./node_modules/.bin/typeorm"

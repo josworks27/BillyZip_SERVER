@@ -1,6 +1,6 @@
 import { Router } from 'express';
-export const favsRouter = Router();
 import * as favsController from '../controllers/favs';
-// /favs
+export const favsRouter = Router();
+
 favsRouter.post('/', favsController.PostFavs);
 favsRouter.get('/', favsController.GetFavs);

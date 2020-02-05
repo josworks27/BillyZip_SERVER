@@ -26,8 +26,7 @@ createConnection()
 const app = express();
 
 // middlewares
-const PORT: string | number = process.env.PORT || 3000;
-// app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 3000);
 app.use(compression());
 app.use(bodyParser.json());
 app.use(
@@ -49,15 +48,8 @@ app.use(cors());
 // Routes
 app.use('/users', usersRouter);
 app.use('/houses', housesRouter);
-app.use('/application', applicationRouter);
 app.use('/favs', favsRouter);
+app.use('/application', applicationRouter);
 app.use('/payment', paymentRouter);
-
-// start express server
-app.listen(PORT, () => {
-  console.log(
-    `BillyZip server has started on port ${PORT}. Open http://localhost:${PORT} to see results`,
-  );
-});
 
 export default app;

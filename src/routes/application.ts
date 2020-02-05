@@ -1,6 +1,6 @@
 import { Router } from 'express';
-export const applicationRouter = Router();
 import * as applicationController from '../controllers/application';
-// /application
+export const applicationRouter = Router();
+
 applicationRouter.post('/', applicationController.PostApplication);
 applicationRouter.get('/', applicationController.GetApplication);
