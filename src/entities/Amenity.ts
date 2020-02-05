@@ -42,6 +42,6 @@ export class Amenity extends BaseEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
-  @Column({ type: 'boolean', nullable: true })
+  @Column({ type: 'boolean' })
   isActive!: boolean;
 }

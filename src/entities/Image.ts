@@ -32,7 +32,7 @@ export class Image extends BaseEntity {
 
   @ManyToOne(
     (type) => House,
-    (house) => house.images, { nullable:false }
+    (house) => house.images
   )
   house!: House;
 }

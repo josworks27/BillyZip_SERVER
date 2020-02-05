@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { House } from '../entities/House';
 import { Amenity } from '../entities/Amenity';
 import { User } from '../entities/User';
+import { Image } from '../entities/Image';
 
 // * GET
 // * /houses
@@ -11,8 +12,7 @@ export const GetAllHouses = async (req: Request, res: Response) => {
 
   // 디비에서 모든 하우스 매물 가져오기
   const houses = await House.find();
-  console.log('houses is ', houses);
-  res.status(200).json('GetAllHouse success!');
+  res.status(200).json(houses);
 };
 
 // * POST
@@ -43,24 +43,25 @@ export const PostHouse = async (req: Request, res: Response) => {
     tv,
     bed,
     washing,
-    allowPet
+    allowPet,
   } = req.body;
 
-  // 새로운 Amenity 생성하기
+  // ! JSON.parse는 테스트 환경의 문제. 클라이언트와 타입 확인해서 고칠 것!
   const newAmenity = new Amenity();
-  newAmenity.secondFloor = secondFloor;
-  newAmenity.parking = parking;
-  newAmenity.aircon = aircon;
-  newAmenity.autoLock = autoLock;
-  newAmenity.tv = tv;
-  newAmenity.bed = bed;
-  newAmenity.washing = washing;
-  newAmenity.allowPet = allowPet;
+  newAmenity.secondFloor = JSON.parse(secondFloor);
+  newAmenity.parking = JSON.parse(parking);
+  newAmenity.aircon = JSON.parse(aircon);
+  newAmenity.autoLock = JSON.parse(autoLock);
+  newAmenity.tv = JSON.parse(tv);
+  newAmenity.bed = JSON.parse(bed);
+  newAmenity.washing = JSON.parse(washing);
+  newAmenity.allowPet = JSON.parse(allowPet);
+  newAmenity.isActive = true;
 
   await newAmenity.save();
 
-  // 토큰에 있는 user id와 같은 유저를 찾는다.
-  const user = await User.findOne({id: 1});
+  // ! 토큰에 있는 user id와 같은 유저를 찾는다.
+  const user = await User.findOne({ id: 1 });
 
   // 타입 가드??: user가 undefined라면 400번 응답하고 종료.
   if (user === undefined) {
@@ -74,21 +75,34 @@ export const PostHouse = async (req: Request, res: Response) => {
   newHouse.type = type;
   newHouse.year = year;
   newHouse.access = access;
-  newHouse.status = status;
-  newHouse.display = display;
+  newHouse.status = JSON.parse(status);
+  newHouse.display = JSON.parse(display);
   newHouse.startTime = startTime;
   newHouse.endTime = endTime;
-  newHouse.location = location;
+  newHouse.location = JSON.parse(location);
   newHouse.adminDistrict = adminDistrict;
   newHouse.title = title;
   newHouse.description = description;
   newHouse.houseRule = houseRule;
+  newHouse.images = [];
   newHouse.isActive = true;
   // 1:1 관계는 위에서 생성한 newAmenity를 newHouse.amenity에 넣어준다.
   newHouse.amenity = newAmenity;
   // User에서 토큰에 있는 id와 같은 애를 가져와서 넣는다.
   newHouse.user = user;
-
+  
+  // 반복문으로 여러장의 새로운 Image 생성하기
+  for (let i = 0; i < req.files.length; i++) {
+    const { filename, path } = req.files[i];
+    const newImage = new Image();
+    newImage.filePath = path;
+    newImage.fileName = filename;
+    newImage.isActive = true;
+    await newImage.save();
+    
+    newHouse.images.push(newImage);
+  }
+  
   await newHouse.save();
 
   res.status(200).json(newHouse);

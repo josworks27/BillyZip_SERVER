@@ -45,6 +45,9 @@ app.use(cors());
 //     }),
 //   );
 
+// Local Storage for static files
+app.use(express.static('uploads'));
+
 // Routes
 app.use('/users', usersRouter);
 app.use('/houses', housesRouter);
