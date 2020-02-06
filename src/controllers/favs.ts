@@ -1,62 +1,66 @@
 import { Request, Response } from 'express';
-import { getConnection, Tree } from 'typeorm';
+import { getConnection, Tree, getRepository } from 'typeorm';
 import { User } from '../entities/User';
+import { Favorite } from '../entities/Favorite';
+import { House } from '../entities/House';
 
 // POST
 // /favs
 export const PostFavs = async (req: Request, res: Response) => {
-  res.send('PostFavs success!');
-  // console.log('req.body is ', req.body);
+  // 매물페이지에서 favs 버튼을 눌렀을 때 추가되는 favs에 처리되는 로직
+  // 어떤 유저가 어떤 매물을 눌렀는지
 
-  // 아래 방법이 Insert할 때 가장 효율적인 방법이다.(대량 삽입)
-  // const result = await getConnection()
-  //   .createQueryBuilder()
-  //   .insert()
-  //   .into(User)
-  //   .values([
-  //     {
-  //       firstName: req.body.firstName,
-  //       lastName: req.body.lastName,
-  //       age: req.body.age,
-  //     },
-  //   ])
-  //   .execute();
+  // house id와 user id를 req.body와 토큰에서 확인한다.
+  // 각 모델의 인스턴스를 Favorite에 넣어준다.
 
-  // res.json(result);
-  // res.end();
+  const { houseId } = req.body;
+  const tempTokenUserId = 1;
+
+  // 중복이 있는지 체크
+  const result = await getRepository(Favorite)
+    .createQueryBuilder('favorite')
+    .where('favorite.houseId = :houseId', { houseId: houseId })
+    .andWhere('favorite.userId = :userId', { userId: tempTokenUserId })
+    .getOne();
+
+  if (!result) {
+    // 중복 없으면 생성
+    // 해당 매물의 house 데이터를 가져온다.
+    const house = await House.findOne({ id: houseId });
+    // 해당 유저의 user 데이터를 가져온다.
+    const user = await User.findOne({ id: tempTokenUserId });
+
+    const newFav = new Favorite();
+    if (user !== undefined) {
+      newFav.user = user;
+    }
+    if (house !== undefined) {
+      newFav.house = house;
+    }
+    newFav.isActive = true;
+    await newFav.save();
+
+    res.json(newFav);
+  } else {
+    // 중복이면 400번
+    res.sendStatus(400);
+  }
 };
 
 // GET
 // /favs
 export const GetFavs = async (req: Request, res: Response) => {
-  // way 1
-  // const result = await getRepository(User).find();
-  // res.json(result);
+  // ! 토큰인증 !!!
+  // 풋터에 있는 favs을 눌렀을 때 불러오는 로직
+  // 토큰에 있는 user id로 favorite에 저장되어 있는 모든 데이터 house Join 해서 가져오기
 
-  // way 2
-  // const result = await getConnection().manager.find(User);
-  // res.json(result);
-
-  // way 3, best way: use queryBuilder
-  // const result = await getConnection()
-  //   .createQueryBuilder()
-  //   .select('user')
-  //   .from(User, 'user')
-  //   .where('user.id = :id', { id: 2 })
-  //   .getOne();
-
-  const user = new User();
-  user.email = 'test@test.com';
-  user.password = 'user.1234';
-  user.name = 'user.name';
-  user.mobile = '010-1234-1234';
-  user.gender = 'man';
-  user.birth = '1999-12-31';
-  user.currentPlan = '100';
-  user.expiry = '2020-03-20';
-  user.livingHouse = 1;
-  user.isActive = true;
-  const userResult = await user.save();
-
-  res.json(userResult);
+  const tempTokenUserId = 1;
+  const favs = await getRepository(Favorite)
+  .createQueryBuilder('favorite')
+  .leftJoinAndSelect('favorite.user', 'user')
+  .leftJoinAndSelect('favorite.house', 'house')
+  .where('favorite.userId = :userId', { userId: tempTokenUserId})
+  .getMany();
+  
+  res.json(favs);
 };
