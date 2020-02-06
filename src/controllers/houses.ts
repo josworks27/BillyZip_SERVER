@@ -154,8 +154,8 @@ export const GetMainHouses = async (req: Request, res: Response) => {
   // * 유형별 랜덤매물
   const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
   const randHouses = [];
-  for(let i = 0; i < houseType.length; i++) {
 
+  for(let i = 0; i < houseType.length; i++) {
     const result = await createQueryBuilder(House, 'house')
     .take(4)
     .orderBy('RAND()')
@@ -167,7 +167,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
   // ! 유형별 랜덤매물 완료
   // console.log(randHouses);
-
 
   res.status(200).json({rank: rankHouse, rand: randHouses});
 };
