@@ -28,7 +28,7 @@ export class Favorite extends BaseEntity {
   @ManyToOne(
     (type) => User,
     (user) => user.favorites,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   user!: User;
 
@@ -36,7 +36,7 @@ export class Favorite extends BaseEntity {
   @ManyToOne(
     (type) => House,
     (house) => house.favorites,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   house!: House;
 }
