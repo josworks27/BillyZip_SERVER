@@ -3,17 +3,8 @@ import { House } from '../entities/House';
 import { Amenity } from '../entities/Amenity';
 import { User } from '../entities/User';
 import { Image } from '../entities/Image';
-
-// * GET
-// * /houses
-export const GetAllHouses = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
-  // GET 요청을 받으면 토큰 확인 후 모든 매물을 응답해준다.
-
-  // 디비에서 모든 하우스 매물 가져오기
-  const houses = await House.find();
-  res.status(200).json(houses);
-};
+import { Review } from '../entities/Review';
+import { createQueryBuilder, getRepository } from 'typeorm';
 
 // * POST
 // * /houses
@@ -90,7 +81,7 @@ export const PostHouse = async (req: Request, res: Response) => {
   newHouse.amenity = newAmenity;
   // User에서 토큰에 있는 id와 같은 애를 가져와서 넣는다.
   newHouse.user = user;
-  
+
   // 반복문으로 여러장의 새로운 Image 생성하기
   for (let i = 0; i < req.files.length; i++) {
     const { filename, path } = req.files[i];
@@ -99,13 +90,104 @@ export const PostHouse = async (req: Request, res: Response) => {
     newImage.fileName = filename;
     newImage.isActive = true;
     await newImage.save();
-    
+
     newHouse.images.push(newImage);
   }
-  
+
   await newHouse.save();
 
   res.status(200).json(newHouse);
+};
+
+// * GET
+// * /houses
+export const GetMainHouses = async (req: Request, res: Response) => {
+  // ! 토큰 확인한다.
+  // * 메인페이지에 보여줄 매물들 응답하기
+  // * Rating 높은 추천매물 4개, 각 유형별 랜덤 매물 4개씩(원룸, 아파트, 단독주택, 빌라, 오피스텔, 기타)
+
+  // join 하는 방법 house에 reviews들 붙여서 가져오기
+  // inner join으로 리뷰가 있는 하우스들만 가져온다.
+  const houses = await getRepository(House)
+    .createQueryBuilder('house')
+    .innerJoinAndSelect('house.reviews', 'review')
+    .getMany();
+
+  // console.log(houses);
+
+  // * 각각의 매물의 리뷰 평균구하기
+  // 각 house의 rating을 담을 객체 생성
+  const temp: { [index: number]: number[] } = {};
+  const avgObj: { [index: number]: number } = {};
+
+  for (let i = 0; i < houses.length; i++) {
+    temp[i] = [];
+    for (let j = 0; j < houses[i].reviews.length; j++) {
+      temp[i].push(houses[i].reviews[j].rating);
+    }
+    const leng = temp[i].length;
+    avgObj[i + 1] = temp[i].reduce((a, b) => a + b) / leng;
+  }
+
+  // { '1': 3, '2': 3.5, '3': 2, '4': 2, '5': 2, '6': 2 }
+
+  // 객체 내림차순으로 정렬
+  // 정렬해서 4개만 필터링
+  const sortArr = [];
+  for (const prop in avgObj) {
+    sortArr.push([prop, avgObj[prop]]);
+  }
+  sortArr.sort((a: any, b: any) => {
+    return b[1] - a[1];
+  });
+
+  // [[ '2', 3.5 ], [ '1', 3 ], [ '3', 2 ], [ '4', 2 ], [ '5', 2 ], [ '6', 2 ]]
+
+  const rankHouse: any = [];
+  for (let i = 0; i < 4; i++) {
+    rankHouse.push(await House.findOne({ id: Number(sortArr[i][0]) }));
+  }
+
+  // ! 추천매물 완료
+  // console.log(rankHouse);
+
+  // * 유형별 랜덤매물
+  const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
+  const randHouses = [];
+  for(let i = 0; i < houseType.length; i++) {
+
+    const result = await createQueryBuilder(House, 'house')
+    .take(4)
+    .orderBy('RAND()')
+    .where('house.type = :type', { type: houseType[i] })
+    .getMany();
+
+    randHouses.push(result);
+  }
+
+  // ! 유형별 랜덤매물 완료
+  // console.log(randHouses);
+
+
+  res.status(200).json({rank: rankHouse, rand: randHouses});
+};
+
+// * POST
+// * /houses/search
+export const PostSearchHouse = async (req: Request, res: Response) => {
+  res.send('PostSearchHouse success!');
+  // ! 토큰 확인한다.
+  // req.body로 검색 조건을 확인한다.
+  // House 테이블에서 조건에 맞게 찾는다.
+  // 나온 결과물들을 응답한다.
+};
+
+// * GET
+// * /houses/part
+export const GetPartHouses = async (req: Request, res: Response) => {
+  // * 각 유형별 매물을 최신순으로 응답하기
+  // ! 토큰 확인한다.
+  res.send('GetPartHouses');
 };
 
 // * GET
@@ -133,14 +215,4 @@ export const DeleteHouse = async (req: Request, res: Response) => {
   // ! 토큰 확인한다.
   // 토큰 내 User ID와 해당 매물의 작성자(userId)가 일치하는지 확인한다.
   // req.params.id로 해당 매물을 DB에서 삭제한다.
-};
-
-// * POST
-// * /houses/search
-export const PostSearchHouse = async (req: Request, res: Response) => {
-  res.send('PostSearchHouse success!');
-  // ! 토큰 확인한다.
-  // req.body로 검색 조건을 확인한다.
-  // House 테이블에서 조건에 맞게 찾는다.
-  // 나온 결과물들을 응답한다.
 };

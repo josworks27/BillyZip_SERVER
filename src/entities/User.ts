@@ -4,6 +4,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Review } from './Review';
 import { Application } from './Application';
@@ -47,6 +49,12 @@ export class User extends BaseEntity {
 
   @Column({ type: 'boolean' })
   isActive!: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 
   // User(1) <-> Review(*)
   @OneToMany(
