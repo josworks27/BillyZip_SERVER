@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { User } from '../entities/User';
-
-// import { House } from '../entities/House';
-import { getConnection } from 'typeorm';
+import { House } from '../entities/House';
+import { getConnection, getRepository } from 'typeorm';
 
 // POST
 // /users/signup
@@ -33,7 +32,6 @@ export const PostSignup = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(404).send({ error: error.message });
   }
-
 };
 
 // POST
@@ -89,19 +87,17 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 };
 // GET
 // /users/:id/list
+// house의 userId : 매물 등록 작성자의 고유한 아이디
+// 매물리스트 가져오기 위해서 houseId === id
 export const GetList = async (req: Request, res: Response) => {
   try {
-    // const { id } = req.params;
-    // const hostingList = await getConnection()
-    //   .createQueryBuilder()
-    //   .relation(House)
-    //   .select([
-    //     'user.name',
-    //     'house.title',
-    //     'house.created_at, house.satus, house.status',
-    //   ])
-    //   .where('user.id = :id', { id: id })
-    //   .getMany();
+    const { id } = req.params;
+    const hostingList = await getRepository(House)
+      .createQueryBuilder('house')
+      .leftJoinAndSelect('house.user', 'houses')
+      .where('house.userId = :userId', { userId: id })
+      .getMany();
+    res.send(hostingList);
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
