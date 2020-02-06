@@ -4,13 +4,16 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Review } from './Review';
 import { Application } from './Application';
 import { Favorite } from './Favorite';
 import { House } from './House';
-export type userGender = 'man' | 'woman';
-export type plan = '30' | '50' | '70' | '100';
+
+// export type userGender = 'man' | 'woman';
+// export type housePlan = '30' | '50' | '70' | '100';
 
 @Entity()
 export class User extends BaseEntity {
@@ -30,13 +33,13 @@ export class User extends BaseEntity {
   mobile!: string;
 
   @Column()
-  gender!: userGender;
+  gender!: string;
 
   @Column({ type: 'date' })
   birth!: string;
 
   @Column({ nullable: true })
-  currentPlan!: plan;
+  currentPlan!: string;
 
   @Column({ nullable: true })
   expiry!: string;
@@ -46,6 +49,12 @@ export class User extends BaseEntity {
 
   @Column({ type: 'boolean' })
   isActive!: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 
   // User(1) <-> Review(*)
   @OneToMany(
@@ -61,17 +70,17 @@ export class User extends BaseEntity {
   )
   applications!: Application[];
 
-   // User(1) <-> Favorite(*)
-   @OneToMany(
+  // User(1) <-> Favorite(*)
+  @OneToMany(
     (type) => Favorite,
     (favorite) => favorite.user,
   )
   favorites!: Favorite[];
 
-     // User(1) <-> House(*)
-     @OneToMany(
-      (type) => House,
-      (house) => house.user,
-    )
-    houses!: House[];
+  // User(1) <-> House(*)
+  @OneToMany(
+    (type) => House,
+    (house) => house.user,
+  )
+  houses!: House[];
 }

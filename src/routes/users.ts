@@ -1,6 +1,7 @@
 import { Router } from 'express';
-export const usersRouter = Router();
 import * as usersController from '../controllers/users';
+export const usersRouter = Router();
+
 usersRouter.post('/signup', usersController.PostSignup);
 usersRouter.post('/signin', usersController.PostSignin);
 usersRouter.get('/signout', usersController.GetSignout);

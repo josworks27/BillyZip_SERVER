@@ -15,17 +15,19 @@ import {
 import { Amenity } from './Amenity';
 import { Image } from './Image';
 import { Review } from './Review';
-import { plan, User } from '../entities/User';
+import { User } from './User';
 import { Favorite } from './Favorite';
 import { Application } from './Application';
-export type houseType =
-  | 'oneroom'
-  | 'dandok'
-  | 'apart'
-  | 'villa'
-  | 'offietel'
-  | 'rest';
-export type houseYear = '1' | '3' | '5' | '10' | '15' | '20' | '30' | 'rest';
+
+// export type houseType =
+//   | 'oneroom'
+//   | 'dandok'
+//   | 'apart'
+//   | 'villa'
+//   | 'offietel'
+//   | 'rest';
+// export type houseYear = '1' | '3' | '5' | '10' | '15' | '20' | '30' | 'rest';
+// export type houseAccess = '1' | '5' | '10' | '15' | '20' | 'rest';
 
 @Entity()
 export class House extends BaseEntity {
@@ -33,16 +35,16 @@ export class House extends BaseEntity {
   id!: number;
 
   @Column()
-  plan!: plan;
+  plan!: string;
 
   @Column()
-  type!: houseType;
+  type!: string;
 
   @Column()
-  year!: houseYear;
+  year!: string;
 
-  @Column({ type: 'varchar' })
-  access!: plan;
+  @Column()
+  access!: string;
 
   @Column({ type: 'boolean' })
   status!: boolean;
@@ -56,8 +58,11 @@ export class House extends BaseEntity {
   @Column({ nullable: true })
   endTime!: string;
 
-  @Column({ type: 'point' })
-  location!: string;
+  // @Column({ type: 'geometry', spatialFeatureType: 'point', srid: 4326 })
+  // location!: string;
+
+  @Column('simple-array')
+  location!: number[];
 
   @Column()
   adminDistrict!: string;

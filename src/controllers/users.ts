@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../entities/User';
+
 // import { House } from '../entities/House';
 import { getConnection } from 'typeorm';
 
@@ -32,6 +33,7 @@ export const PostSignup = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(404).send({ error: error.message });
   }
+
 };
 
 // POST

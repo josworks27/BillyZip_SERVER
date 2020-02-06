@@ -1,7 +1,8 @@
-// import app from './index';
+import app from './index';
 
-// const server = app.listen(app.get('port'), () =>
-//   console.log(`BillyZip App Listening on PORT ${app.get('port')}!`),
-// );
+// Express Server Connection
+const server = app.listen(app.get('port'), () =>
+  console.log(`BillyZip App Listening on PORT ${app.get('port')}`),
+);
 
-// export default server;
+export default server;

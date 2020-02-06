@@ -30,9 +30,10 @@ export class Image extends BaseEntity {
   @Column({ type: 'boolean' })
   isActive!: boolean;
 
+  // House(1) <-> Image(*)
   @ManyToOne(
     (type) => House,
-    (house) => house.images, { nullable:false }
+    (house) => house.images,
   )
   house!: House;
 }
