@@ -122,7 +122,7 @@ export class House extends BaseEntity {
   @ManyToOne(
     (type) => User,
     (user) => user.houses,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   user!: User;
 }

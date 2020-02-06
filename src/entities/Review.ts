@@ -37,7 +37,7 @@ export class Review extends BaseEntity {
   @ManyToOne(
     (type) => House,
     (house) => house.reviews,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   house!: House;
 
@@ -45,7 +45,7 @@ export class Review extends BaseEntity {
   @ManyToOne(
     (type) => User,
     (user) => user.reviews,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   user!: User;
 }
