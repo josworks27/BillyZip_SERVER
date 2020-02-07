@@ -4,3 +4,4 @@ export const applicationRouter = Router();
 
 applicationRouter.post('/', applicationController.PostApplication);
 applicationRouter.get('/', applicationController.GetApplication);
+applicationRouter.delete('/', applicationController.DeleteApplication);
