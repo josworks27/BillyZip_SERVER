@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { House } from '../entities/House';
 import { getConnection, getRepository } from 'typeorm';
+import * as jwt from 'jsonwebtoken';
+import jwtObj from '../config/jwt';
+import * as bcrypt from 'bcrypt';
 
 // POST
 // /users/signup
@@ -11,6 +14,7 @@ export const PostSignup = async (req: Request, res: Response) => {
     const { email, password, name, mobile, gender, birth } = req.body;
 
     const userEmail = await User.findOne({ email: email });
+    const hashedPwd = await bcrypt.hash(password, 10);
 
     if (userEmail) {
       // User DB에 email이 있는 경우
@@ -20,7 +24,7 @@ export const PostSignup = async (req: Request, res: Response) => {
       // 회원 가입 하기
       const user = new User();
       user.email = email;
-      user.password = password;
+      user.password = hashedPwd;
       user.name = name;
       user.mobile = mobile;
       user.gender = gender;
@@ -45,14 +49,27 @@ export const PostSignup = async (req: Request, res: Response) => {
 export const PostSignin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const userEmail = await User.findOne({ email: email });
-    const userPassword = await User.findOne({ password: password });
+    const userEmail: any = await User.findOne({ email: email });
+    const checkPwd = await bcrypt.compare(password, userEmail.password);
 
     if (userEmail) {
       // 사용자 이메일이 존재할 때,
-      if (userPassword) {
+      if (checkPwd) {
         // 사용자 비밀번호 일치할 때,
-        res.status(200).send('로그인 성공');
+        const token = jwt.sign(
+          {
+            userId: userEmail.id,
+            email: email,
+          },
+          jwtObj.secret,
+          {
+            expiresIn: '30m',
+          },
+        );
+        res.cookie('user', token);
+        console.log('token :: ', token);
+
+        res.status(200).send({ token: token });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
         res.status(409).send('비밀번호가 일치하지 않아요');
