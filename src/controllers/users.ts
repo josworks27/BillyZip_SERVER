@@ -8,7 +8,7 @@ import { getConnection, getRepository } from 'typeorm';
 // 회원가입 구현
 export const PostSignup = async (req: Request, res: Response) => {
   try {
-    const { email, password, name, mobile, gender, isActive, birth } = req.body;
+    const { email, password, name, mobile, gender, birth } = req.body;
 
     const userEmail = await User.findOne({ email: email });
 
@@ -24,8 +24,10 @@ export const PostSignup = async (req: Request, res: Response) => {
       user.name = name;
       user.mobile = mobile;
       user.gender = gender;
-      user.isActive = isActive;
+      user.isActive = true;
       user.birth = birth;
+      // ! 아래 테스트용 임시
+      user.expiry = 3;
       await user.save();
       res.status(200).send('회원가입이 완료되었습니다');
     }

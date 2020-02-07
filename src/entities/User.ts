@@ -42,7 +42,7 @@ export class User extends BaseEntity {
   currentPlan!: string;
 
   @Column({ nullable: true })
-  expiry!: string;
+  expiry!: number;
 
   @Column({ nullable: true })
   livingHouse!: number;

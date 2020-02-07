@@ -53,10 +53,10 @@ export class House extends BaseEntity {
   display!: boolean;
 
   @Column({ nullable: true })
-  startTime!: string;
+  startTime!: number;
 
   @Column({ nullable: true })
-  endTime!: string;
+  endTime!: number;
 
   // @Column({ type: 'geometry', spatialFeatureType: 'point', srid: 4326 })
   // location!: string;
