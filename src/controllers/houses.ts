@@ -10,7 +10,6 @@ import {
   Brackets,
   getConnection,
 } from 'typeorm';
-import { putReview } from './review';
 
 // * POST
 // * /houses
@@ -58,9 +57,8 @@ export const PostHouse = async (req: Request, res: Response) => {
   await newAmenity.save();
 
   // ! 토큰에 있는 user id와 같은 유저를 찾는다.
-  const user = await User.findOne({ id: 1 });
+  const user = await User.findOne({ id: 2 });
 
-  // 타입 가드??: user가 undefined라면 400번 응답하고 종료.
   if (user === undefined) {
     res.sendStatus(400);
     return;
@@ -81,12 +79,11 @@ export const PostHouse = async (req: Request, res: Response) => {
   newHouse.title = title;
   newHouse.description = description;
   newHouse.houseRule = houseRule;
-  newHouse.images = [];
   newHouse.isActive = true;
-  // 1:1 관계는 위에서 생성한 newAmenity를 newHouse.amenity에 넣어준다.
   newHouse.amenity = newAmenity;
-  // User에서 토큰에 있는 id와 같은 애를 가져와서 넣는다.
   newHouse.user = user;
+  
+  await newHouse.save();
 
   // 반복문으로 여러장의 새로운 Image 생성하기
   for (let i = 0; i < req.files.length; i++) {
@@ -94,13 +91,10 @@ export const PostHouse = async (req: Request, res: Response) => {
     const newImage = new Image();
     newImage.filePath = path;
     newImage.fileName = filename;
+    newImage.house = newHouse;
     newImage.isActive = true;
     await newImage.save();
-
-    newHouse.images.push(newImage);
   }
-
-  await newHouse.save();
 
   res.status(200).json(newHouse);
 };
