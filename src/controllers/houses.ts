@@ -149,9 +149,12 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
   // [[ '2', 3.5 ], [ '1', 3 ], [ '3', 2 ], [ '4', 2 ], [ '5', 2 ], [ '6', 2 ]]
 
-  const rankHouse: any = [];
+  const rankHouse: House[] = [];
   for (let i = 0; i < 4; i++) {
-    rankHouse.push(await House.findOne({ id: Number(sortArr[i][0]) }));
+    const result = await House.findOne({ id: Number(sortArr[i][0]) });
+    if (result !== undefined) {
+      rankHouse.push(result);
+    }
   }
 
   // ! 추천매물 완료
