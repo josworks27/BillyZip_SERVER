@@ -56,11 +56,11 @@ export const GetFavs = async (req: Request, res: Response) => {
 
   const tempTokenUserId = 1;
   const favs = await getRepository(Favorite)
-  .createQueryBuilder('favorite')
-  .leftJoinAndSelect('favorite.user', 'user')
-  .leftJoinAndSelect('favorite.house', 'house')
-  .where('favorite.userId = :userId', { userId: tempTokenUserId})
-  .getMany();
-  
+    .createQueryBuilder('favorite')
+    .leftJoinAndSelect('favorite.user', 'user')
+    .leftJoinAndSelect('favorite.house', 'house')
+    .where('favorite.userId = :userId', { userId: tempTokenUserId })
+    .getMany();
+
   res.json(favs);
 };
