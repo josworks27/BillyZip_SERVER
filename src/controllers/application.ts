@@ -24,14 +24,14 @@ export const PostApplication = async (req: Request, res: Response) => {
       // 중복신청 확인
       const checkApply = await getRepository(Application)
         .createQueryBuilder('application')
-        .where('application.user = :user', { user: token.userId })
+        .where('application.user = :user', { user: decode.userId })
         .andWhere('application.house = :house', { house: houseId })
         .getOne();
 
       // 중복되지 않을 떄 => 정상
       if (!checkApply) {
         // 신청자 정보 가져오기, 구독기간 확인
-        const user: any = await User.findOne({ id: token.userId });
+        const user: any = await User.findOne({ id: decode.userId });
         // 매물의 최소 거주기간 확인
         const house: any = await House.findOne({ id: houseId });
 
@@ -72,7 +72,7 @@ export const GetApplication = async (req: Request, res: Response) => {
         .createQueryBuilder('application')
         .leftJoinAndSelect('application.house', 'house')
         .leftJoinAndSelect('application.user', 'user')
-        .where('house.userId = :userId', { userId: token.userId })
+        .where('house.userId = :userId', { userId: decode.userId })
         .getMany();
 
       res.status(200).json(apply);

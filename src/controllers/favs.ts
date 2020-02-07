@@ -24,7 +24,7 @@ export const PostFavs = async (req: Request, res: Response) => {
       const result = await getRepository(Favorite)
         .createQueryBuilder('favorite')
         .where('favorite.houseId = :houseId', { houseId: houseId })
-        .andWhere('favorite.userId = :userId', { userId: token.userId })
+        .andWhere('favorite.userId = :userId', { userId: decode.userId })
         .getOne();
 
       if (!result) {
@@ -32,7 +32,7 @@ export const PostFavs = async (req: Request, res: Response) => {
         // 해당 매물의 house 데이터를 가져온다.
         const house = await House.findOne({ id: houseId });
         // 해당 유저의 user 데이터를 가져온다.
-        const user = await User.findOne({ id: token.userId });
+        const user = await User.findOne({ id: decode.userId });
 
         const newFav = new Favorite();
         if (user !== undefined) {
@@ -69,7 +69,7 @@ export const GetFavs = async (req: Request, res: Response) => {
         .createQueryBuilder('favorite')
         .leftJoinAndSelect('favorite.user', 'user')
         .leftJoinAndSelect('favorite.house', 'house')
-        .where('favorite.userId = :userId', { userId: token.userId })
+        .where('favorite.userId = :userId', { userId: decode.userId })
         .getMany();
 
       res.json(favs);

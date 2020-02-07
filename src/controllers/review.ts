@@ -21,8 +21,8 @@ export const postReview = async (req: Request, res: Response) => {
 
       // 토큰 id로 user 찾기
       let user;
-      if (typeof token.userId === 'number') {
-        user = await User.findOne({ id: token.userId });
+      if (typeof decode.userId === 'number') {
+        user = await User.findOne({ id: decode.userId });
       }
 
       if (user === undefined) {

@@ -16,12 +16,11 @@ import jwtObj from '../config/jwt';
 // * POST
 // * /houses
 export const PostHouse = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
-  // 클라이언트에서 필요한 정보를 입력받아 요청하면(Amenity & House)
-  // 토큰에 있는 User ID, req.file(이미지), req.body(그 외)를 확인하여 DB에 생성하고 응답하기
   const token = req.cookies.user;
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
+      console.log('decode is ?? ', decode);
       const {
         plan,
         type,
@@ -61,7 +60,7 @@ export const PostHouse = async (req: Request, res: Response) => {
       await newAmenity.save();
 
       // ! 토큰에 있는 user id와 같은 유저를 찾는다.
-      const user = await User.findOne({ id: token.userId });
+      const user = await User.findOne({ id: decode.userId });
 
       if (user === undefined) {
         res.sendStatus(400);
@@ -420,7 +419,7 @@ export const PutHouse = async (req: Request, res: Response) => {
         .where('house.id = :id', { id: id })
         .getOne();
 
-      if (house.user.id === token.userId) {
+      if (house.user.id === decode.userId) {
         // 수정할 권한 있음
         await getConnection()
           .createQueryBuilder()
