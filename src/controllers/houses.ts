@@ -90,10 +90,10 @@ export const PostHouse = async (req: Request, res: Response) => {
 
       // 반복문으로 여러장의 새로운 Image 생성하기
       for (let i = 0; i < req.files.length; i++) {
-        const { filename, path } = req.files[i];
+        const { originalname, location } = req.files[i];
         const newImage = new Image();
-        newImage.filePath = path;
-        newImage.fileName = filename;
+        newImage.filePath = location;
+        newImage.fileName = originalname;
         newImage.house = newHouse;
         newImage.isActive = true;
         await newImage.save();

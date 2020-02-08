@@ -9,5 +9,5 @@ export const PostPayment = (req: Request, res: Response) => {
 // GET
 // /favs
 export const GetPayment = (req: Request, res: Response) => {
-    res.send('GetPayment success!');
-  };
+  res.send('GetPayment success!');
+};
