@@ -19,7 +19,7 @@ export const PostSignup = async (req: Request, res: Response) => {
 
     if (userEmail) {
       // User DB에 email이 있는 경우
-      res.status(409).send('이미 가입된 이메일입니다');
+      res.status(409).json('이미 가입된 이메일입니다');
       // 이미 가입된 이메일로 가입 시도시, 409
     } else {
       // User DB에 email이 없는 경우
@@ -35,10 +35,10 @@ export const PostSignup = async (req: Request, res: Response) => {
       // ! 아래 테스트용 임시
       user.expiry = 3;
       await user.save();
-      res.status(200).send('회원가입이 완료되었습니다');
+      res.status(200).json('회원가입이 완료되었습니다');
     }
   } catch (error) {
-    res.status(400).send({ error: error.message });
+    res.status(400).json({ error: error.message });
     // 예를 들어, 필수입력 부분 중에 하나라도 필수 입력을 하지 않고
     // 회원가입 시도 하면, catch가 에러를 잡아준다.
     // 사용자가 모바일 번호 작성하지 않고, 회원가입 시도할 경우
@@ -74,20 +74,20 @@ export const PostSignin = async (req: Request, res: Response) => {
             expiresIn: '30m',
           },
         );
-        res.cookie('user', token);
-        console.log('로그인 발급되는 토큰 확인 :: ', token);
+        // res.cookie('user', token);
+        // console.log('로그인 발급되는 토큰 확인 :: ', token);
 
-        res.status(200).send({ token: token });
+        res.status(200).json({ token: token });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
-        res.status(401).send('비밀번호가 일치하지 않아요');
+        res.status(401).json('비밀번호가 일치하지 않아요');
         // 로그인 실패, 상태 코드 401
       }
     } else {
-      res.status(409).send('회원가입을 해주세요');
+      res.status(409).json('회원가입을 해주세요');
     }
   } catch (error) {
-    res.status(404).send({ error: error.message });
+    res.status(404).json({ error: error.message });
   }
 };
 
