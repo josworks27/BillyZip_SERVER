@@ -8,8 +8,8 @@ const authToken = 'fc0d1035f40c3a4c3e02811c4c1c90f9';
 
 const client = twilio(accountSid, authToken);
 
-// GET
-// /test
+// * GET
+// * /test
 export const getTest = (req: Request, res: Response) => {
   // 유저가 인증번호를 요청할 때의 로직
   // GET으로 요청을 받으면 유저의 핸드폰 번호로 인증번호를 보내준다.
@@ -26,8 +26,8 @@ export const getTest = (req: Request, res: Response) => {
   res.end();
 };
 
-// POST
-// /test
+// * POST
+// * /test
 export const postTest = (req: Request, res: Response) => {
   // 인증번호를 확인한 유저가 POST 요청으로 인증번호를 보낸다.
   // req.body로 인증번호를 확인하고 대조작업을 한다 ?
