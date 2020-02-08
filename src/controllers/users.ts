@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 // POST
 // /users/signup
 // 회원가입 구현
+// jwt verify 필요 없음
 export const PostSignup = async (req: Request, res: Response) => {
   try {
     const { email, password, name, mobile, gender, birth } = req.body;
@@ -19,6 +20,7 @@ export const PostSignup = async (req: Request, res: Response) => {
     if (userEmail) {
       // User DB에 email이 있는 경우
       res.status(409).send('이미 가입된 이메일입니다');
+      // 이미 가입된 이메일로 가입 시도시, 409
     } else {
       // User DB에 email이 없는 경우
       // 회원 가입 하기
@@ -36,7 +38,11 @@ export const PostSignup = async (req: Request, res: Response) => {
       res.status(200).send('회원가입이 완료되었습니다');
     }
   } catch (error) {
-    res.status(404).send({ error: error.message });
+    res.status(400).send({ error: error.message });
+    // 예를 들어, 필수입력 부분 중에 하나라도 필수 입력을 하지 않고
+    // 회원가입 시도 하면, catch가 에러를 잡아준다.
+    // 사용자가 모바일 번호 작성하지 않고, 회원가입 시도할 경우
+    // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
   }
 };
 
@@ -50,10 +56,12 @@ export const PostSignin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const userEmail: any = await User.findOne({ email: email });
-    const checkPwd = await bcrypt.compare(password, userEmail.password);
 
     if (userEmail) {
       // 사용자 이메일이 존재할 때,
+
+      const checkPwd = await bcrypt.compare(password, userEmail.password);
+
       if (checkPwd) {
         // 사용자 비밀번호 일치할 때,
         const token = jwt.sign(
@@ -67,15 +75,18 @@ export const PostSignin = async (req: Request, res: Response) => {
           },
         );
         res.cookie('user', token);
-        console.log('token :: ', token);
+        console.log('로그인 발급되는 토큰 확인 :: ', token);
 
         res.status(200).send({ token: token });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
-        res.status(409).send('비밀번호가 일치하지 않아요');
+        res.status(401).send('비밀번호가 일치하지 않아요');
+        // 로그인 실패, 상태 코드 401
       }
     } else {
-      res.status(409).send('회원가입을 해주세요');
+      // User DB에 이메일이 존재하지 않은 경우
+      res.status(401).send('회원가입을 해주세요');
+      // 로그인 실패, 상태 코드 401
     }
   } catch (error) {
     res.status(404).send({ error: error.message });
@@ -83,89 +94,120 @@ export const PostSignin = async (req: Request, res: Response) => {
 };
 
 // GET
-// /users/signout
+// /users/
+// 현재 클라이언트 단에서 로그아웃 버튼 없음 : 추후 논의
 export const GetSignout = (req: Request, res: Response) => {
   res.send('signOut success!');
 };
 
 // GET
 // /users/:id/current-info
+// jwt verify 필요
 export const GetCurrentInfo = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const userInfo = await getConnection()
-      .createQueryBuilder()
-      .select(['user.currentPlan', 'user.livingHouse'])
-      .from(User, 'user')
-      .where('user.id =:id', { id: id })
-      .getMany();
-    res.json(userInfo);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
+  const token = req.cookies.user;
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      try {
+        console.log('본인 인증 유저 아이디 확인 :: ', decode.userId);
+        const { id } = req.params;
+        const userInfo = await getConnection()
+          .createQueryBuilder()
+          .select(['user.currentPlan', 'user.livingHouse'])
+          .from(User, 'user')
+          .where('user.id =:id', { id: decode.userId })
+          .getMany();
+        res.json(userInfo);
+      } catch (error) {
+        res.status(404).json({ error: error.message });
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  });
 };
 // GET
 // /users/:id/list
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
 export const GetList = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const hostingList = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.user', 'houses')
-      .where('house.userId = :userId', { userId: id })
-      .getMany();
-    res.send(hostingList);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
+  const token = req.cookies.user;
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      try {
+        const { id } = req.params;
+        const hostingList = await getRepository(House)
+          .createQueryBuilder('house')
+          .leftJoinAndSelect('house.user', 'houses')
+          .where('house.userId = :userId', { userId: id })
+          .getMany();
+        res.send(hostingList);
+      } catch (error) {
+        res.status(404).json({ error: error.message });
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  });
 };
 
 // GET
 // /users/:id/my-info
 export const GetMyInfo = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const myInfo = await getConnection()
-      .createQueryBuilder()
-      .select([
-        'user.name',
-        'user.gender',
-        'user.birth',
-        'user.email',
-        'user.mobile',
-        'user.password',
-      ])
-      .from(User, 'user')
-      .where('user.id =:id', { id: id })
-      .getOne();
-    res.json(myInfo);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
+  const token = req.cookies.user;
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      try {
+        const { id } = req.params;
+        const myInfo = await getConnection()
+          .createQueryBuilder()
+          .select([
+            'user.name',
+            'user.gender',
+            'user.birth',
+            'user.email',
+            'user.mobile',
+            'user.password',
+          ])
+          .from(User, 'user')
+          .where('user.id =:id', { id: id })
+          .getOne();
+        res.json(myInfo);
+      } catch (error) {
+        res.status(404).json({ error: error.message });
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  });
 };
 
 // PUT
 // /users/:id/my-info
 export const PutMyInfo = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name, gender, birth, email, mobile } = req.body;
-    await getConnection()
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        name: name,
-        gender: gender,
-        birth: birth,
-        email: email,
-        mobile: mobile,
-      })
-      .where('user.id =:id', { id: id })
-      .execute();
-    res.json('프로필 회원 정보가 수정되었습니다');
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
+  const token = req.cookies.user;
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      try {
+        const { id } = req.params;
+        const { name, gender, birth, email, mobile } = req.body;
+        await getConnection()
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            name: name,
+            gender: gender,
+            birth: birth,
+            email: email,
+            mobile: mobile,
+          })
+          .where('user.id =:id', { id: id })
+          .execute();
+        res.json('프로필 회원 정보가 수정되었습니다');
+      } catch (error) {
+        res.status(404).json({ error: error.message });
+      }
+    } else {
+      res.sendStatus(404);
+    }
+  });
 };
