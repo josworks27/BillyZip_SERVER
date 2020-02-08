@@ -39,6 +39,7 @@ export const PostSignup = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(400).json({ error: error.message });
+
     // 예를 들어, 필수입력 부분 중에 하나라도 필수 입력을 하지 않고
     // 회원가입 시도 하면, catch가 에러를 잡아준다.
     // 사용자가 모바일 번호 작성하지 않고, 회원가입 시도할 경우
@@ -85,6 +86,7 @@ export const PostSignin = async (req: Request, res: Response) => {
       }
     } else {
       res.status(409).json('회원가입을 해주세요');
+      // 로그인 실패, 상태 코드 401
     }
   } catch (error) {
     res.status(404).json({ error: error.message });
@@ -92,6 +94,7 @@ export const PostSignin = async (req: Request, res: Response) => {
 };
 
 // GET
+
 // /users/signout
 // 현재 클라이언트 단에서 로그아웃 버튼 없음 : 추후 논의
 export const GetSignout = (req: Request, res: Response) => {
