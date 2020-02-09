@@ -76,6 +76,7 @@ export const PostSignin = async (req: Request, res: Response) => {
             expiresIn: '30m',
           },
         );
+
         res.status(200).json({ token: token });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,

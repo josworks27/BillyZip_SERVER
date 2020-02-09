@@ -45,8 +45,9 @@ export const postVerify = (req: Request, res: Response) => {
   // req.body로 받은 요청번호가 맞는지 확인한다.
   const { userVerifyNum } = req.body;
 
-  // 맞을 때: 200 응답
   if (userVerifyNum === authNumber) {
+    // 맞을 때: 200 응답
+
     res.status(200).json('인증번호 일치');
   } else {
     // 아닐 때: 401 응답

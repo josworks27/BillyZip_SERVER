@@ -156,13 +156,21 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
       // [[ '2', 3.5 ], [ '1', 3 ], [ '3', 2 ], [ '4', 2 ], [ '5', 2 ], [ '6', 2 ]]
 
-      const rankHouse: any = [];
+      const rankHouses: any = [];
       for (let i = 0; i < 4; i++) {
-        rankHouse.push(await House.findOne({ id: Number(sortArr[i][0]) }));
+        const rankResult: any = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.reviews', 'review')
+        .leftJoinAndSelect('house.images', 'image')
+        .where('house.id = :id', { id: Number(sortArr[i][0])})
+        .getOne();
+        rankResult.avgRating = sortArr[i][1];
+        rankHouses.push(rankResult);
+        // rankHouses.push(await House.findOne({ id: Number(sortArr[i][0]) }));
       }
 
       // ! 추천매물 완료
-      // console.log(rankHouse);
+      // console.log(rankHouses);
 
       // * 유형별 랜덤매물
       const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
@@ -170,6 +178,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
       for (let i = 0; i < houseType.length; i++) {
         const result = await createQueryBuilder(House, 'house')
+          .leftJoinAndSelect('house.images', 'image')
           .take(4)
           .orderBy('RAND()')
           .where('house.type = :type', { type: houseType[i] })
@@ -181,7 +190,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       // ! 유형별 랜덤매물 완료
       // console.log(randHouses);
 
-      res.status(200).json({ rank: rankHouse, rand: randHouses });
+      res.status(200).json({ rank: rankHouses, rand: randHouses });
     } else {
       res.sendStatus(404);
     }
