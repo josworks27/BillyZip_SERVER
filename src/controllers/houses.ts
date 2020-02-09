@@ -120,10 +120,9 @@ export const GetMainHouses = async (req: Request, res: Response) => {
     if (decode) {
       const houses = await getRepository(House)
         .createQueryBuilder('house')
-        .innerJoinAndSelect('house.reviews', 'review')
+        .leftJoinAndSelect('house.reviews', 'review')
         .getMany();
 
-      // console.log(houses);
 
       // * 각각의 매물의 리뷰 평균구하기
       // 각 house의 rating을 담을 객체 생성
@@ -136,7 +135,11 @@ export const GetMainHouses = async (req: Request, res: Response) => {
           temp[i].push(houses[i].reviews[j].rating);
         }
         const leng = temp[i].length;
-        avgObj[i + 1] = temp[i].reduce((a, b) => a + b) / leng;
+        if (leng === 0) {
+          avgObj[i + 1] = 0;
+        } else {
+          avgObj[i + 1] = temp[i].reduce((a, b) => a + b) / leng;
+        }
       }
 
       // { '1': 3, '2': 3.5, '3': 2, '4': 2, '5': 2, '6': 2 }

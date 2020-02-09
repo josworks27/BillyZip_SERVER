@@ -74,7 +74,7 @@ export const PostSignin = async (req: Request, res: Response) => {
             expiresIn: '30m',
           },
         );
-        // res.cookie('user', token);
+        res.cookie('user', token);
         // console.log('로그인 발급되는 토큰 확인 :: ', token);
 
         res.status(200).json({ token: token });
