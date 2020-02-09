@@ -123,6 +123,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
         .leftJoinAndSelect('house.reviews', 'review')
         .getMany();
 
+
       // * 각각의 매물의 리뷰 평균구하기
       // 각 house의 rating을 담을 객체 생성
       const temp: { [index: number]: number[] } = {};

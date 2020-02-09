@@ -47,6 +47,7 @@ export const postVerify = (req: Request, res: Response) => {
 
   if (userVerifyNum === authNumber) {
     // 맞을 때: 200 응답
+
     res.status(200).json('인증번호 일치');
   } else {
     // 아닐 때: 401 응답
