@@ -14,7 +14,7 @@ import { housesRouter } from './routes/houses';
 import { favsRouter } from './routes/favs';
 import { applicationRouter } from './routes/application';
 import { paymentRouter } from './routes/payment';
-import { testRouter } from './routes/test';
+import { authRouter } from './routes/auth';
 
 // Connect typeORM mysql
 createConnection()
@@ -57,6 +57,6 @@ app.use('/application', applicationRouter);
 app.use('/payment', paymentRouter);
 
 // for Test
-app.use('/test', testRouter);
+app.use('/auth', authRouter);
 
 export default app;
