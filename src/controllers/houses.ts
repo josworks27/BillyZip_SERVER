@@ -16,7 +16,9 @@ import jwtObj from '../config/jwt';
 // * POST
 // * /houses
 export const PostHouse = async (req: Request, res: Response) => {
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
@@ -115,14 +117,16 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
   // join 하는 방법 house에 reviews들 붙여서 가져오기
   // inner join으로 리뷰가 있는 하우스들만 가져온다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const houses = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.reviews', 'review')
         .getMany();
-
 
       // * 각각의 매물의 리뷰 평균구하기
       // 각 house의 rating을 담을 객체 생성
@@ -159,11 +163,11 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       const rankHouses: any = [];
       for (let i = 0; i < 4; i++) {
         const rankResult: any = await getRepository(House)
-        .createQueryBuilder('house')
-        .leftJoinAndSelect('house.reviews', 'review')
-        .leftJoinAndSelect('house.images', 'image')
-        .where('house.id = :id', { id: Number(sortArr[i][0])})
-        .getOne();
+          .createQueryBuilder('house')
+          .leftJoinAndSelect('house.reviews', 'review')
+          .leftJoinAndSelect('house.images', 'image')
+          .where('house.id = :id', { id: Number(sortArr[i][0]) })
+          .getOne();
         rankResult.avgRating = sortArr[i][1];
         rankHouses.push(rankResult);
         // rankHouses.push(await House.findOne({ id: Number(sortArr[i][0]) }));
@@ -230,7 +234,10 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
     washing,
     allowPet,
     */
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const {
@@ -339,7 +346,9 @@ export const GetPartHouses = async (req: Request, res: Response) => {
   // ! 토큰 확인한다.
   // req.params.type으로 유형 확인
   // 유형으로 디비조회 및 updated_at 최신순 orderBy
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { type } = req.params;
@@ -364,7 +373,9 @@ export const GetHouse = async (req: Request, res: Response) => {
   // ! 토큰 확인한다.
   // req.params.id로 해당 매물의 id를 확인한다.
   // DB에서 id로 해당 매물을 찾아서 응답한다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { id } = req.params;
@@ -392,7 +403,9 @@ export const PutHouse = async (req: Request, res: Response) => {
   // ! 이미지 수정기능은 ??
   // 토큰 내 User ID와 해당 매물의 작성자(userId)가 일치하는지 확인한다.
   // 요청받은 정보를 req.file과 req.body로 확인하고 DB를 수정한다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const {
@@ -488,7 +501,9 @@ export const DeleteHouse = async (req: Request, res: Response) => {
   // ! 토큰 확인한다.
   // 토큰 내 User ID와 해당 매물의 작성자(userId)가 일치하는지 확인한다.
   // req.params.id로 해당 매물을 DB에서 삭제한다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { id } = req.params;

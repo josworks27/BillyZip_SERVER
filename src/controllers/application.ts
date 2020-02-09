@@ -14,7 +14,10 @@ export const PostApplication = async (req: Request, res: Response) => {
   // 신청자 구독기간 확인
   // 최소 거주기간(startTime) 최대 거주기간(endTime) 를 date -> number로 바꾸기
   // User.expiry도 date -> number로 바꾸기
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       // 토큰의 user id와 req.body로 매물 Id를 확인
@@ -63,7 +66,10 @@ export const PostApplication = async (req: Request, res: Response) => {
 export const GetApplication = async (req: Request, res: Response) => {
   // ! 토큰 확인
   // 자신이 올린 매물과 신청자들의 정보를 가져온다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       // const tempTokenUserId = 2;
@@ -88,7 +94,10 @@ export const DeleteApplication = async (req: Request, res: Response) => {
   // ! 토큰 확인
   // 집주인이 거절했을 때 application에서 해당 데이터를 삭제한다.
   // 신청자의 id를 확인한다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { userId, houseId } = req.body;
