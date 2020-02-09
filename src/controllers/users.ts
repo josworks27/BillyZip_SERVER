@@ -5,6 +5,7 @@ import { getConnection, getRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import * as bcrypt from 'bcrypt';
+import { authRouter } from '../routes/auth';
 
 // POST
 // /users/signup
@@ -75,9 +76,6 @@ export const PostSignin = async (req: Request, res: Response) => {
             expiresIn: '30m',
           },
         );
-        res.cookie('user', token);
-        // console.log('로그인 발급되는 토큰 확인 :: ', token);
-
         res.status(200).json({ token: token });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
@@ -89,7 +87,9 @@ export const PostSignin = async (req: Request, res: Response) => {
       // 로그인 실패, 상태 코드 401
     }
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    // 서버 내부 오류, 상태 코드 400
+    // 웹 서버가 요청사항을 수행할 수 없을 경우
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -103,13 +103,15 @@ export const GetSignout = (req: Request, res: Response) => {
 
 // GET
 // /users/:id/current-info
-// jwt verify 필요
+// jwt verify 필요 : Bearer Authorization
 export const GetCurrentInfo = async (req: Request, res: Response) => {
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
-        console.log('본인 인증 유저 아이디 확인 :: ', decode.userId);
         const { id } = req.params;
         const userInfo = await getConnection()
           .createQueryBuilder()
@@ -122,7 +124,8 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
         res.status(404).json({ error: error.message });
       }
     } else {
-      res.sendStatus(404);
+      // 토큰 인증 실패
+      res.sendStatus(401);
     }
   });
 };
@@ -130,31 +133,43 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 // /users/:id/list
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
+// jwt verify 필요 : Bearer Authorization
 export const GetList = async (req: Request, res: Response) => {
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
+      console.log('유저 아이디', decode.userId);
       try {
         const { id } = req.params;
-        const hostingList = await getRepository(House)
+        const houseList = await getRepository(House)
           .createQueryBuilder('house')
           .leftJoinAndSelect('house.user', 'houses')
-          .where('house.userId = :userId', { userId: id })
+          .where('house.userId = :userId', { userId: decode.userId })
           .getMany();
-        res.send(hostingList);
+
+        res.send(houseList);
       } catch (error) {
+        // userId의 매물 정보가 없을 경우
         res.status(404).json({ error: error.message });
       }
     } else {
-      res.sendStatus(404);
+      // 토큰 인증 실패
+      res.sendStatus(401);
     }
   });
 };
 
 // GET
 // /users/:id/my-info
+// jwt verify 필요 : Bearer Authorization
 export const GetMyInfo = async (req: Request, res: Response) => {
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
@@ -170,27 +185,34 @@ export const GetMyInfo = async (req: Request, res: Response) => {
             'user.password',
           ])
           .from(User, 'user')
-          .where('user.id =:id', { id: id })
+          .where('user.id =:id', { id: decode.userId })
           .getOne();
         res.json(myInfo);
       } catch (error) {
+        // 서버가 요청받은 리소스를 찾을 수 없는 상태 코드, 404
         res.status(404).json({ error: error.message });
       }
     } else {
-      res.sendStatus(404);
+      // 토큰 인증 실패
+      res.sendStatus(401);
     }
   });
 };
 
 // PUT
 // /users/:id/my-info
+// jwt verify 필요 : Bearer Authorization
 export const PutMyInfo = async (req: Request, res: Response) => {
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
         const { id } = req.params;
-        const { name, gender, birth, email, mobile } = req.body;
+        const { name, gender, birth, password, email, mobile } = req.body;
+        const hashedPwd = bcrypt.hashSync(password, 10);
         await getConnection()
           .createQueryBuilder()
           .update(User)
@@ -198,17 +220,37 @@ export const PutMyInfo = async (req: Request, res: Response) => {
             name: name,
             gender: gender,
             birth: birth,
+            password: hashedPwd,
             email: email,
             mobile: mobile,
           })
-          .where('user.id =:id', { id: id })
+          .where('user.id =:id', { id: decode.userId })
           .execute();
-        res.json('프로필 회원 정보가 수정되었습니다');
+        // 수정된 사용자 정보
+        const updatedInfo = await getConnection()
+          .createQueryBuilder()
+          .select([
+            'user.name',
+            'user.gender',
+            'user.birth',
+            'user.email',
+            'user.mobile',
+            'user.password',
+          ])
+          .from(User, 'user')
+          .where('user.id =:id', { id: decode.userId })
+          .getOne();
+
+        res.json(updatedInfo);
       } catch (error) {
-        res.status(404).json({ error: error.message });
+        // user DB에 필수 입력 하지 않을 경우
+        // 예를 들어, user.name을 값을 입력하지 않을 경우,
+        // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
+        res.status(400).json({ error: error.message });
       }
     } else {
-      res.sendStatus(404);
+      // 토큰 인증 실패
+      res.sendStatus(401);
     }
   });
 };
