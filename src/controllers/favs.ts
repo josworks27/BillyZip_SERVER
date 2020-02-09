@@ -14,7 +14,10 @@ export const PostFavs = async (req: Request, res: Response) => {
 
   // house id와 user id를 req.body와 토큰에서 확인한다.
   // 각 모델의 인스턴스를 Favorite에 넣어준다.
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { houseId } = req.body;
@@ -61,7 +64,10 @@ export const GetFavs = async (req: Request, res: Response) => {
   // ! 토큰인증 !!!
   // 풋터에 있는 favs을 눌렀을 때 불러오는 로직
   // 토큰에 있는 user id로 favorite에 저장되어 있는 모든 데이터 house Join 해서 가져오기
-  const token = req.cookies.user;
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       // const tempTokenUserId = 1;
