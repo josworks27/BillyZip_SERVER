@@ -42,7 +42,7 @@ const upload = multer({
 // });
 
 // housesController
-housesRouter.post('/', upload.array('images', 3), housesController.PostHouse);
+housesRouter.post('/', upload.array('images', 7), housesController.PostHouse);
 housesRouter.get('/', housesController.GetMainHouses);
 housesRouter.post('/search', housesController.PostSearchHouse);
 housesRouter.get('/part/:type', housesController.GetPartHouses);
