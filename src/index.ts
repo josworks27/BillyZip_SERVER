@@ -37,14 +37,14 @@ app.use(
 );
 app.use(cookieParser());
 app.use(morgan('dev'));
-app.use(cors());
-//   app.use(
-//     cors({
-//       origin: ['http://stroll1.s3-website.ap-northeast-2.amazonaws.com'],
-//       methods: ['GET', 'POST'],
-//       credentials: true,
-//     }),
-//   );
+// app.use(cors());
+  app.use(
+    cors({
+      origin: ['http://192.168.219.102'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      credentials: true,
+    }),
+  );
 
 // Local Storage for static files
 app.use(express.static('uploads'));
@@ -55,8 +55,6 @@ app.use('/houses', housesRouter);
 app.use('/favs', favsRouter);
 app.use('/application', applicationRouter);
 app.use('/payment', paymentRouter);
-
-// for Test
 app.use('/auth', authRouter);
 
 export default app;

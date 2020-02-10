@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getConnection, Tree, getRepository } from 'typeorm';
+import { getConnection, getRepository } from 'typeorm';
 import { User } from '../entities/User';
 import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
@@ -17,9 +17,12 @@ export const PostFavs = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
 
   const token = bearerAuth.split('Bearer ')[1];
+  console.log(token);
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    console.log(decode);
     if (decode) {
+      console.log('1');
       const { houseId } = req.body;
       // const tempTokenUserId = 1;
 
@@ -53,6 +56,7 @@ export const PostFavs = async (req: Request, res: Response) => {
         res.sendStatus(400);
       }
     } else {
+      console.log('2');
       res.sendStatus(404);
     }
   });
@@ -65,7 +69,6 @@ export const GetFavs = async (req: Request, res: Response) => {
   // 풋터에 있는 favs을 눌렀을 때 불러오는 로직
   // 토큰에 있는 user id로 favorite에 저장되어 있는 모든 데이터 house Join 해서 가져오기
   const bearerAuth: any = req.headers.authorization;
-
   const token = bearerAuth.split('Bearer ')[1];
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
@@ -78,9 +81,41 @@ export const GetFavs = async (req: Request, res: Response) => {
         .where('favorite.userId = :userId', { userId: decode.userId })
         .getMany();
 
-      res.json(favs);
+      res.status(200).json(favs);
     } else {
       res.sendStatus(404);
+    }
+  });
+};
+
+// * DELETE
+// * /favs
+export const DeleteFavs = async (req: Request, res: Response) => {
+  // favs에서 삭제 누르면 favid 찾아서 삭제
+  // 자신만 지울 수 있다.
+  // favs는 한 한 명의 유저가 하나의 매물만 신청할 수 있기 때문에
+  // favId만 알면 바로 지울 수 있다.
+
+  const { favId } = req.body;
+  const bearerAuth: any = req.headers.authorization;
+  const token = bearerAuth.split('Bearer ')[1];
+
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      const favResult = await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Favorite)
+        .where('id = :id', { id: favId })
+        .execute();
+
+      console.log(favResult);
+
+      if (favResult.affected === 1) {
+        res.status(200).json('정상적으로 제거');
+      } else {
+        res.sendStatus(404);
+      }
     }
   });
 };

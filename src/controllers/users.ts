@@ -5,7 +5,6 @@ import { getConnection, getRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import * as bcrypt from 'bcrypt';
-import { authRouter } from '../routes/auth';
 
 // POST
 // /users/signup

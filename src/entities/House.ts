@@ -86,7 +86,7 @@ export class House extends BaseEntity {
   updatedAt!: Date;
 
   // House(1) <-> Amenity(1)
-  @OneToOne((type) => Amenity, { nullable: false })
+  @OneToOne((type) => Amenity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn()
   amenity!: Amenity;
 

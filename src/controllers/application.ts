@@ -103,7 +103,7 @@ export const DeleteApplication = async (req: Request, res: Response) => {
       const { userId, houseId } = req.body;
       // 자신의 매물id와 신청자의 id의 데이터를 삭제
 
-      await getConnection()
+      const apply = await getConnection()
         .createQueryBuilder()
         .delete()
         .from(Application)
@@ -111,7 +111,11 @@ export const DeleteApplication = async (req: Request, res: Response) => {
         .andWhere('application.houseId = :houseId', { houseId: houseId })
         .execute();
 
-      res.status(200).json('삭제 완료');
+      if (apply.affected === 1) {
+        res.status(200).json('삭제 완료');
+      } else if (apply.affected === 0) {
+        res.status(400).json('해당 매물 없음');
+      }
     } else {
       res.sendStatus(404);
     }
