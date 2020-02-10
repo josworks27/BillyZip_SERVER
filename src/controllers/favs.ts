@@ -9,11 +9,6 @@ import jwtObj from '../config/jwt';
 // POST
 // /favs
 export const PostFavs = async (req: Request, res: Response) => {
-  // 매물페이지에서 favs 버튼을 눌렀을 때 추가되는 favs에 처리되는 로직
-  // 어떤 유저가 어떤 매물을 눌렀는지
-
-  // house id와 user id를 req.body와 토큰에서 확인한다.
-  // 각 모델의 인스턴스를 Favorite에 넣어준다.
   const bearerAuth: any = req.headers.authorization;
 
   const token = bearerAuth.split('Bearer ')[1];
@@ -106,7 +101,8 @@ export const DeleteFavs = async (req: Request, res: Response) => {
         .createQueryBuilder()
         .delete()
         .from(Favorite)
-        .where('id = :id', { id: favId })
+        .where('favorite.id = :id', { id: favId })
+        .andWhere('favorite.userId = :userId', { userId: decode.userId })
         .execute();
 
       console.log(favResult);
