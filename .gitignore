@@ -6,3 +6,4 @@ tmp/
 temp/
 src/config/awsconfig.json
 .env
+ormconfig_sample.json
