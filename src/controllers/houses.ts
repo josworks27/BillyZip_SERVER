@@ -161,16 +161,29 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       // [[ '2', 3.5 ], [ '1', 3 ], [ '3', 2 ], [ '4', 2 ], [ '5', 2 ], [ '6', 2 ]]
 
       const rankHouses: any = [];
-      for (let i = 0; i < 4; i++) {
-        const rankResult: any = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.reviews', 'review')
-          .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: Number(sortArr[i][0]) })
-          .getOne();
-        rankResult.avgRating = sortArr[i][1];
-        rankHouses.push(rankResult);
-        // rankHouses.push(await House.findOne({ id: Number(sortArr[i][0]) }));
+
+      if (sortArr.length > 3) {
+        for (let i = 0; i < 4; i++) {
+          const rankResult: any = await getRepository(House)
+            .createQueryBuilder('house')
+            .leftJoinAndSelect('house.reviews', 'review')
+            .leftJoinAndSelect('house.images', 'image')
+            .where('house.id = :id', { id: Number(sortArr[i][0]) })
+            .getOne();
+          rankResult.avgRating = sortArr[i][1];
+          rankHouses.push(rankResult);
+        }
+      } else {
+        for (let i = 0; i < sortArr.length; i++) {
+          const rankResult: any = await getRepository(House)
+            .createQueryBuilder('house')
+            .leftJoinAndSelect('house.reviews', 'review')
+            .leftJoinAndSelect('house.images', 'image')
+            .where('house.id = :id', { id: Number(sortArr[i][0]) })
+            .getOne();
+          rankResult.avgRating = sortArr[i][1];
+          rankHouses.push(rankResult);
+        }
       }
 
       // ! 추천매물 완료
@@ -381,16 +394,25 @@ export const GetHouse = async (req: Request, res: Response) => {
     if (decode) {
       const { id } = req.params;
 
-      console.log(id);
-
-      const house = await getRepository(House)
+      const house: any = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.images', 'image')
         .leftJoinAndSelect('house.reviews', 'review')
         .where('house.id = :id', { id: id })
         .getOne();
 
-      res.json(house);
+      let avgRating: number = 0;
+      if (house !== undefined && house.reviews.length > 0) {
+        for (let i = 0; i < house.reviews.length; i++) {
+          avgRating += house.reviews[i].rating;
+        }
+        avgRating = avgRating / house.reviews.length;
+        house['avgRating'] = avgRating;
+      } else {
+        house['avgRating'] = 0;
+      }
+
+      res.status(200).json(house);
     } else {
       res.sendStatus(404);
     }
@@ -519,9 +541,9 @@ export const DeleteHouse = async (req: Request, res: Response) => {
         .where('house.id = :id', { id: id })
         .getOne();
 
-        console.log(house);
+      console.log(house);
 
-        console.log(decode);
+      console.log(decode);
 
       if (house.user.id === decode.userId) {
         // 매물 지우기
