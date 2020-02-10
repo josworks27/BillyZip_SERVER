@@ -356,6 +356,7 @@ export const GetPartHouses = async (req: Request, res: Response) => {
       const typeHouses = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.images', 'image')
+        .leftJoinAndSelect('house.reviews', 'review')
         .where('house.type = :type', { type: type })
         .orderBy('house.updated_at', 'DESC')
         .getMany();
@@ -518,8 +519,13 @@ export const DeleteHouse = async (req: Request, res: Response) => {
         .where('house.id = :id', { id: id })
         .getOne();
 
-      if (house.user.id === token.userId) {
+        console.log(house);
+
+        console.log(decode);
+
+      if (house.user.id === decode.userId) {
         // 매물 지우기
+        console.log('1');
         await getConnection()
           .createQueryBuilder()
           .delete()
@@ -542,8 +548,10 @@ export const DeleteHouse = async (req: Request, res: Response) => {
           .from(Review)
           .where('houseId = :houseId', { houseId: id })
           .execute();
+
         res.sendStatus(200);
       } else {
+        console.log('2');
         res.sendStatus(409);
       }
     } else {
