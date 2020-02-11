@@ -7,8 +7,10 @@ import { Review } from '../entities/Review';
 import {
   createQueryBuilder,
   getRepository,
-  Brackets,
   getConnection,
+  Not,
+  LessThanOrEqual,
+  Like,
 } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
@@ -208,136 +210,97 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 };
 
 // * POST
-// * /houses/search
-export const PostSearchHouse = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
-  // req.body로 검색 조건을 확인한다.
-  // House 테이블에서 조건에 맞게 찾는다.
-  // 나온 결과물들을 응답한다.
-
+// * /houses/filter
+export const PostFilterHouse = async (req: Request, res: Response) => {
   // ! 지도검색과 기본검색은 필터링 조건은 같다는 가정
-  // ! left join으로 일부분 맞으면 다 붙여서 매물 가져오기
+  // ! 클라이언트에서 기본값 '전체'는 null로 받는다.
   // 1. req.body로 필터링 조건을 확인한다.
   // 2. 필터링 조건에 따라 검색한다.
   // 필터링조건 : 행정구역명(adminDistrict), 구독모델(plan), 집 유형(type), 건축연도 - 몇년 이내(year) ?!, 역까지 접근시간 - 몇 분 이내(access), 어메너티들(...)
 
-  // ! 필수조건은 반드시 입력해야 함
-  /** 필수조건 andWhere
-    plan,
-    type,
-    year,
-    access,
-    adminDistrict,
-   */
-
-  /** 추가조건 new Brackets(...)
-    secondFloor,
-    parking,
-    aircon,
-    autoLock,
-    tv,
-    bed,
-    washing,
-    allowPet,
-    */
   const bearerAuth: any = req.headers.authorization;
 
   const token = bearerAuth.split('Bearer ')[1];
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      const {
-        plan,
-        type,
-        year,
-        access,
-        adminDistrict,
-        secondFloor,
-        parking,
-        aircon,
-        autoLock,
-        tv,
-        bed,
-        washing,
-        allowPet,
-      } = req.body;
+      const { plan, type, year, access, adminDistrict } = req.body;
 
-      let houses;
-      if (
-        secondFloor !== null ||
-        parking !== null ||
-        aircon !== null ||
-        autoLock !== null ||
-        tv !== null ||
-        bed !== null ||
-        washing !== null ||
-        allowPet !== null
-      ) {
-        // 추가옵션이 있을 때(하나라도 true가 있다는 것)
-        console.log('추가조건 있을 때 실행~');
-        houses = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.amenity', 'amenity')
-          .leftJoinAndSelect('house.images', 'image')
-          // 필수조건 검색(모든 조건 맞아야 나옴)
-          .where('house.plan = :plan', { plan: plan })
-          .andWhere('house.type = :type', { type: type })
-          .andWhere('house.year = :year', { year: year })
-          .andWhere('house.access = :access', { access: access })
-          .andWhere('house.adminDistrict = :adminDistrict', {
-            adminDistrict: adminDistrict,
-          })
-          /**
-           * 필수만 맞고 추가가 안맞으면 필수에 맞는 매물이 나온다(필수에 맞는 전체 다 나온다.)
-           * 필수도 맞고 추가도 맞으면 추가에 맞는 매물만 나온다(추가 다 맞는 일부만 나온다.)
-           */
-          .andWhere(
-            new Brackets((qb) => {
-              qb.where('amenity.secondFloor = :secondFloor', {
-                secondFloor: secondFloor,
-              })
-                .andWhere('amenity.parking = :parking', {
-                  parking: parking,
-                })
-                .andWhere('amenity.aircon = :aircon', {
-                  aircon: aircon,
-                })
-                .andWhere('amenity.autoLock = :autoLock', {
-                  autoLock: autoLock,
-                })
-                .andWhere('amenity.tv = :tv', {
-                  tv: tv,
-                })
-                .andWhere('amenity.bed = :bed', {
-                  bed: bed,
-                })
-                .andWhere('amenity.washing = :washing', {
-                  washing: washing,
-                })
-                .andWhere('amenity.allowPet = :allowPet', {
-                  allowPet: allowPet,
-                });
-            }),
-          )
-          .getMany();
-      } else {
-        // 추가옵션이 없을 때(필수만 있을 때)
-        // 필수옵션만 검색
-        console.log('추가조건 없을 때 실행~');
-        houses = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.amenity', 'amenity')
-          .leftJoinAndSelect('house.images', 'image')
-          // 필수조건 검색(모든 조건 맞아야 나옴)
-          .where('house.plan = :plan', { plan: plan })
-          .andWhere('house.type = :type', { type: type })
-          .andWhere('house.year = :year', { year: year })
-          .andWhere('house.access = :access', { access: access })
-          .andWhere('house.adminDistrict = :adminDistrict', {
-            adminDistrict: adminDistrict,
-          })
-          .getMany();
+      // select는 전부 아래처럼 바꾸는게 좋을 듯
+      const houses: any = await getRepository(House).find({
+        relations: ['amenity', 'reviews', 'images'],
+        where: {
+          plan: plan ? plan : Not('null'),
+          type: type ? type : Not('null'),
+          year: year ? LessThanOrEqual(year) : Not('null'),
+          access: access ? LessThanOrEqual(access) : Not('null'),
+          adminDistrict: adminDistrict ? adminDistrict : Not('null'),
+        },
+        order: {
+          updatedAt: 'DESC',
+        },
+      });
+
+      for (let i = 0; i < houses.length; i++) {
+        let avgRating: number = 0;
+        if (houses[i].reviews.length > 0) {
+          for (let j = 0; j < houses[i].reviews.length; j++) {
+            avgRating += houses[i].reviews[j].rating;
+          }
+          avgRating = avgRating / houses[i].reviews.length;
+          houses[i]['avgRating'] = avgRating;
+        } else {
+          houses[i]['avgRating'] = 0;
+        }
       }
+
+      res.status(200).json(houses);
+    } else {
+      res.sendStatus(404);
+    }
+  });
+};
+
+// * POST
+// * /houses/search
+export const PostSearchHouse = async (req: Request, res: Response) => {
+  // req.body로 searchWord 받아서 각 매물의 타이틀과 비교
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      const { searchWord } = req.body;
+      const searchWordArray = searchWord.split(' ');
+      console.log(searchWordArray);
+
+      const convertedWords: string[] = searchWordArray.map((word: any) => {
+        return { title: Like(`%${word}%`) };
+      });
+
+      console.log(convertedWords);
+      const houses: any = await getRepository(House).find({
+        relations: ['amenity', 'reviews', 'images'],
+        where: convertedWords,
+        order: {
+          updatedAt: 'DESC',
+        },
+      });
+
+      for (let i = 0; i < houses.length; i++) {
+        let avgRating: number = 0;
+        if (houses[i].reviews.length > 0) {
+          for (let j = 0; j < houses[i].reviews.length; j++) {
+            avgRating += houses[i].reviews[j].rating;
+          }
+          avgRating = avgRating / houses[i].reviews.length;
+          houses[i]['avgRating'] = avgRating;
+        } else {
+          houses[i]['avgRating'] = 0;
+        }
+      }
+      
       res.status(200).json(houses);
     } else {
       res.sendStatus(404);

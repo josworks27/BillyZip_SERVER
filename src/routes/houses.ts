@@ -44,6 +44,7 @@ const upload = multer({
 // housesController
 housesRouter.post('/', upload.array('images', 7), housesController.PostHouse);
 housesRouter.get('/', housesController.GetMainHouses);
+housesRouter.post('/filter', housesController.PostFilterHouse);
 housesRouter.post('/search', housesController.PostSearchHouse);
 housesRouter.get('/part/:type', housesController.GetPartHouses);
 housesRouter.get('/:id', housesController.GetHouse);
