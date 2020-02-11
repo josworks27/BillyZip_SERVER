@@ -141,7 +141,6 @@ export const GetList = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      console.log('유저 아이디', decode.userId);
       try {
         const { id } = req.params;
         const houseList = await getRepository(House)

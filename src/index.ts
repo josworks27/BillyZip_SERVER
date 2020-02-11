@@ -38,13 +38,13 @@ app.use(
 app.use(cookieParser());
 app.use(morgan('dev'));
 // app.use(cors());
-  app.use(
-    cors({
-      origin: ['http://192.168.219.103'],
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      credentials: true,
-    }),
-  );
+app.use(
+  cors({
+    origin: ['http://192.168.219.103'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  }),
+);
 
 // Local Storage for static files
 // app.use(express.static('uploads'));
