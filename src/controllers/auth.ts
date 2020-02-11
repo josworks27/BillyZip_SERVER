@@ -23,7 +23,6 @@ export const postAuth = (req: Request, res: Response) => {
 
   // 유저 전화번호와 인증번호를 임시로 저장
   tempAuthObj[userPhoneNum] = authNumber;
-  console.log('tempAuthObj is ', tempAuthObj);
 
   if (userPhoneNum !== null) {
     userPhoneNum = `+82${userPhoneNum.slice(1)}`;
@@ -56,7 +55,6 @@ export const postVerify = (req: Request, res: Response) => {
   if (tempAuthObj[userPhoneNum] === userVerifyNum) {
     // 맞을 때: 200 응답
     delete tempAuthObj[userPhoneNum];
-    console.log(tempAuthObj);
     res.status(200).json('인증번호 일치');
   } else {
     // 아닐 때: 401 응답

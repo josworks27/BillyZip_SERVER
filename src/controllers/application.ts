@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { House } from '../entities/House';
 import { Application } from '../entities/Application';
-import app from '..';
 import { getRepository, getConnection } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
@@ -22,7 +21,6 @@ export const PostApplication = async (req: Request, res: Response) => {
     if (decode) {
       // 토큰의 user id와 req.body로 매물 Id를 확인
       const { houseId } = req.body;
-      // const tempTokenUserId = 3;
 
       // 중복신청 확인
       const checkApply = await getRepository(Application)
@@ -38,19 +36,27 @@ export const PostApplication = async (req: Request, res: Response) => {
         // 매물의 최소 거주기간 확인
         const house: any = await House.findOne({ id: houseId });
 
-        if (house.startTime < user.expiry) {
-          // 신청 가능
-          const apply = await new Application();
-          apply.house = house;
-          apply.user = user;
-          apply.isActive = true;
-          apply.save();
+        // if (house.startTime < user.expiry) {
+        //   // 신청 가능
+        //   const apply = await new Application();
+        //   apply.house = house;
+        //   apply.user = user;
+        //   apply.isActive = true;
+        //   apply.save();
 
-          res.status(200).json('신청 성공');
-        } else {
-          // 최소 거주기간 부족으로 신청 불가능
-          res.status(400).json('최소 거주기간 부족으로 신청 실패');
-        }
+        //   res.status(200).json('신청 성공');
+        // } else {
+        //   // 최소 거주기간 부족으로 신청 불가능
+        //   res.status(400).json('최소 거주기간 부족으로 신청 실패');
+        // }
+
+        const apply = await new Application();
+        apply.house = house;
+        apply.user = user;
+        apply.isActive = true;
+        apply.save();
+
+        res.status(200).json('신청 성공');
       } else {
         // 중복될 때
         res.status(400).json('이미 신청한 매물입니다.');
@@ -72,7 +78,6 @@ export const GetApplication = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      // const tempTokenUserId = 2;
 
       const apply = await getRepository(Application)
         .createQueryBuilder('application')

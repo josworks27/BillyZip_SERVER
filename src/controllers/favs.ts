@@ -12,12 +12,9 @@ export const PostFavs = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
 
   const token = bearerAuth.split('Bearer ')[1];
-  console.log(token);
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    console.log(decode);
     if (decode) {
-      console.log('1');
       const { houseId } = req.body;
       // const tempTokenUserId = 1;
 
@@ -51,7 +48,6 @@ export const PostFavs = async (req: Request, res: Response) => {
         res.sendStatus(400);
       }
     } else {
-      console.log('2');
       res.sendStatus(404);
     }
   });
@@ -104,8 +100,6 @@ export const DeleteFavs = async (req: Request, res: Response) => {
         .where('favorite.id = :id', { id: favId })
         .andWhere('favorite.userId = :userId', { userId: decode.userId })
         .execute();
-
-      console.log(favResult);
 
       if (favResult.affected === 1) {
         res.status(200).json('정상적으로 제거');

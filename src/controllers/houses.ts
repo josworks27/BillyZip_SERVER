@@ -22,7 +22,6 @@ export const PostHouse = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      console.log('decode is ?? ', decode);
       const {
         plan,
         type,
@@ -186,9 +185,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
         }
       }
 
-      // ! 추천매물 완료
-      // console.log(rankHouses);
-
       // * 유형별 랜덤매물
       const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
       const randHouses = [];
@@ -203,9 +199,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
         randHouses.push(result);
       }
-
-      // ! 유형별 랜덤매물 완료
-      // console.log(randHouses);
 
       res.status(200).json({ rank: rankHouses, rand: randHouses });
     } else {
@@ -345,7 +338,7 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
           })
           .getMany();
       }
-      res.json(houses);
+      res.status(200).json(houses);
     } else {
       res.sendStatus(404);
     }
@@ -374,7 +367,7 @@ export const GetPartHouses = async (req: Request, res: Response) => {
         .orderBy('house.updated_at', 'DESC')
         .getMany();
 
-      res.json(typeHouses);
+      res.status(200).json(typeHouses);
     } else {
       res.sendStatus(404);
     }
@@ -398,6 +391,7 @@ export const GetHouse = async (req: Request, res: Response) => {
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.images', 'image')
         .leftJoinAndSelect('house.reviews', 'review')
+        .leftJoinAndSelect('house.amenity', 'amenity')
         .where('house.id = :id', { id: id })
         .getOne();
 
@@ -531,9 +525,6 @@ export const DeleteHouse = async (req: Request, res: Response) => {
     if (decode) {
       const { id } = req.params;
 
-      // ! 토큰 대신 임시 테스트용!
-      // const tempTokenUserId = 1;
-
       // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
       const house: any = await getRepository(House)
         .createQueryBuilder('house')
@@ -541,13 +532,8 @@ export const DeleteHouse = async (req: Request, res: Response) => {
         .where('house.id = :id', { id: id })
         .getOne();
 
-      console.log(house);
-
-      console.log(decode);
-
       if (house.user.id === decode.userId) {
         // 매물 지우기
-        console.log('1');
         await getConnection()
           .createQueryBuilder()
           .delete()
@@ -573,7 +559,6 @@ export const DeleteHouse = async (req: Request, res: Response) => {
 
         res.sendStatus(200);
       } else {
-        console.log('2');
         res.sendStatus(409);
       }
     } else {
