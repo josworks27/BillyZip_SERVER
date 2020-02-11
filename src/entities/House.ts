@@ -40,11 +40,11 @@ export class House extends BaseEntity {
   @Column()
   type!: string;
 
-  @Column()
-  year!: string;
+  @Column({ type: 'int' })
+  year!: number;
 
-  @Column()
-  access!: string;
+  @Column({ type: 'int' })
+  access!: number;
 
   @Column({ type: 'boolean' })
   status!: boolean;

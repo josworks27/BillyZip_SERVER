@@ -72,7 +72,7 @@ export const PostSignin = async (req: Request, res: Response) => {
           },
           jwtObj.secret,
           {
-            expiresIn: '30m',
+            expiresIn: '360m',
           },
         );
 
