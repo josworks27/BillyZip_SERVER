@@ -16,7 +16,6 @@ export const PostFavs = async (req: Request, res: Response) => {
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       const { houseId } = req.body;
-      // const tempTokenUserId = 1;
 
       // 중복이 있는지 체크
       const result = await getRepository(Favorite)
@@ -42,7 +41,7 @@ export const PostFavs = async (req: Request, res: Response) => {
         newFav.isActive = true;
         await newFav.save();
 
-        res.json(newFav);
+        res.status(200).json(newFav);
       } else {
         // 중복이면 400번
         res.sendStatus(400);
@@ -64,7 +63,6 @@ export const GetFavs = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      // const tempTokenUserId = 1;
       const favs = await getRepository(Favorite)
         .createQueryBuilder('favorite')
         .leftJoinAndSelect('favorite.user', 'user')

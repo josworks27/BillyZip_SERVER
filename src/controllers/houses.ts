@@ -14,6 +14,7 @@ import {
 } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
+import { Favorite } from '../entities/Favorite';
 
 // * POST
 // * /houses
@@ -279,7 +280,6 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
         return { title: Like(`%${word}%`) };
       });
 
-      console.log(convertedWords);
       const houses: any = await getRepository(House).find({
         relations: ['amenity', 'reviews', 'images'],
         where: convertedWords,
@@ -353,11 +353,21 @@ export const GetHouse = async (req: Request, res: Response) => {
       const house: any = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.images', 'image')
-        .leftJoinAndSelect('house.reviews', 'review')
         .leftJoinAndSelect('house.amenity', 'amenity')
+        .leftJoinAndSelect('house.user', 'user')
         .where('house.id = :id', { id: id })
         .getOne();
 
+        // user 조인한 reviews 만들기
+        const reviews: any = await getRepository(Review)
+        .createQueryBuilder('review')
+        .leftJoinAndSelect('review.user', 'user')
+        .where('review.houseId = :houseId', { houseId: house.id })
+        .getMany();
+
+        house['reviews'] = reviews;
+
+        // avgRating 만들기
       let avgRating: number = 0;
       if (house !== undefined && house.reviews.length > 0) {
         for (let i = 0; i < house.reviews.length; i++) {
@@ -368,6 +378,16 @@ export const GetHouse = async (req: Request, res: Response) => {
       } else {
         house['avgRating'] = 0;
       }
+
+      // 이미 favs한 매물인지 확인하기 true, false
+      const fav: any = await getRepository(Favorite)
+      .createQueryBuilder('favorite')
+      .where('favorite.userId = :userId', {userId: decode.userId})
+      .andWhere('favorite.houseId = :houseId', {houseId: id})
+      .getOne();
+      
+      const favsNow: boolean = fav ? true : false;
+      house['favsNow'] = favsNow;
 
       res.status(200).json(house);
     } else {
