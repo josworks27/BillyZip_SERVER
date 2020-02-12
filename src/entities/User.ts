@@ -12,9 +12,6 @@ import { Application } from './Application';
 import { Favorite } from './Favorite';
 import { House } from './House';
 
-// export type userGender = 'man' | 'woman';
-// export type housePlan = '30' | '50' | '70' | '100';
-
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()

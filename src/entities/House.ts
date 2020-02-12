@@ -11,23 +11,12 @@ import {
   ManyToOne,
 } from 'typeorm';
 
-// User에서 만든 type plan 재활용
 import { Amenity } from './Amenity';
 import { Image } from './Image';
 import { Review } from './Review';
 import { User } from './User';
 import { Favorite } from './Favorite';
 import { Application } from './Application';
-
-// export type houseType =
-//   | 'oneroom'
-//   | 'dandok'
-//   | 'apart'
-//   | 'villa'
-//   | 'offietel'
-//   | 'rest';
-// export type houseYear = '1' | '3' | '5' | '10' | '15' | '20' | '30' | 'rest';
-// export type houseAccess = '1' | '5' | '10' | '15' | '20' | 'rest';
 
 @Entity()
 export class House extends BaseEntity {
