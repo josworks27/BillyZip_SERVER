@@ -4,6 +4,7 @@ import { Amenity } from '../entities/Amenity';
 import { User } from '../entities/User';
 import { Image } from '../entities/Image';
 import { Review } from '../entities/Review';
+import { Favorite } from '../entities/Favorite';
 import {
   createQueryBuilder,
   getRepository,
@@ -14,7 +15,7 @@ import {
 } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
-import { Favorite } from '../entities/Favorite';
+import convertHouseProperties from '../util/convertHouseProperties';
 
 // * POST
 // * /houses
@@ -111,16 +112,28 @@ export const PostHouse = async (req: Request, res: Response) => {
 };
 
 // * GET
+// * /houses/all
+export const GetAllHouses = async (req: Request, res: Response) => {
+  const bearerAuth: any = req.headers.authorization;
+  const token = bearerAuth.split('Bearer ')[1];
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      const allHouses = await House.find();
+      res.status(200).json(allHouses);
+    } else {
+      res.sendStatus(401);
+    }
+  });
+};
+
+// * GET
 // * /houses
 export const GetMainHouses = async (req: Request, res: Response) => {
   // ! 토큰 확인한다.
   // * 메인페이지에 보여줄 매물들 응답하기
   // * Rating 높은 추천매물 4개, 각 유형별 랜덤 매물 4개씩(원룸, 아파트, 단독주택, 빌라, 오피스텔, 기타)
 
-  // join 하는 방법 house에 reviews들 붙여서 가져오기
-  // inner join으로 리뷰가 있는 하우스들만 가져온다.
   const bearerAuth: any = req.headers.authorization;
-
   const token = bearerAuth.split('Bearer ')[1];
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
@@ -225,9 +238,18 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      const { plan, type, year, access, adminDistrict } = req.body;
+      const body = req.body;
+      const convertedType = convertHouseProperties(
+        body.plan,
+        body.type,
+        body.year,
+        body.access,
+        body.adminDistrict,
+      );
 
-      // select는 전부 아래처럼 바꾸는게 좋을 듯
+      const { plan, type, year, access, adminDistrict } = convertedType;
+      console.log(convertedType);
+
       const houses: any = await getRepository(House).find({
         relations: ['amenity', 'reviews', 'images'],
         where: {
@@ -255,6 +277,9 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
         }
       }
 
+      // console.log('houses 2 ', houses);
+      console.log('houses 2 ', houses.length);
+
       res.status(200).json(houses);
     } else {
       res.sendStatus(404);
@@ -272,36 +297,48 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      const { searchWord } = req.body;
-      const searchWordArray = searchWord.split(' ');
-      console.log(searchWordArray);
+      if (req.body.searchWord) {
+        const { searchWord } = req.body;
+        const searchWordArray = searchWord.split(' ');
+        console.log(searchWordArray);
 
-      const convertedWords: string[] = searchWordArray.map((word: any) => {
-        return { title: Like(`%${word}%`) };
-      });
+        const convertedWords: string[] = searchWordArray.map((word: any) => {
+          return { title: Like(`%${word}%`) };
+        });
 
-      const houses: any = await getRepository(House).find({
-        relations: ['amenity', 'reviews', 'images'],
-        where: convertedWords,
-        order: {
-          updatedAt: 'DESC',
-        },
-      });
+        const houses: any = await getRepository(House).find({
+          relations: ['amenity', 'reviews', 'images'],
+          where: convertedWords,
+          order: {
+            updatedAt: 'DESC',
+          },
+        });
 
-      for (let i = 0; i < houses.length; i++) {
-        let avgRating: number = 0;
-        if (houses[i].reviews.length > 0) {
-          for (let j = 0; j < houses[i].reviews.length; j++) {
-            avgRating += houses[i].reviews[j].rating;
+        for (let i = 0; i < houses.length; i++) {
+          let avgRating: number = 0;
+          if (houses[i].reviews.length > 0) {
+            for (let j = 0; j < houses[i].reviews.length; j++) {
+              avgRating += houses[i].reviews[j].rating;
+            }
+            avgRating = avgRating / houses[i].reviews.length;
+            houses[i]['avgRating'] = avgRating;
+          } else {
+            houses[i]['avgRating'] = 0;
           }
-          avgRating = avgRating / houses[i].reviews.length;
-          houses[i]['avgRating'] = avgRating;
-        } else {
-          houses[i]['avgRating'] = 0;
         }
+
+        res.status(200).json(houses);
+      } else {
+        const houses: any = await getRepository(House).find({
+          relations: ['amenity', 'reviews', 'images'],
+          where: [],
+          order: {
+            updatedAt: 'DESC',
+          },
+        });
+        
+        res.status(200).json(houses);
       }
-      
-      res.status(200).json(houses);
     } else {
       res.sendStatus(404);
     }
@@ -312,7 +349,6 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
 // * /houses/part/:type
 export const GetPartHouses = async (req: Request, res: Response) => {
   // * 각 유형별 매물을 최신순으로 응답하기
-  // ! 토큰 확인한다.
   // req.params.type으로 유형 확인
   // 유형으로 디비조회 및 updated_at 최신순 orderBy
   const bearerAuth: any = req.headers.authorization;
@@ -340,7 +376,6 @@ export const GetPartHouses = async (req: Request, res: Response) => {
 // * GET
 // * /houses/:id
 export const GetHouse = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
   // req.params.id로 해당 매물의 id를 확인한다.
   // DB에서 id로 해당 매물을 찾아서 응답한다.
   const bearerAuth: any = req.headers.authorization;
@@ -358,16 +393,16 @@ export const GetHouse = async (req: Request, res: Response) => {
         .where('house.id = :id', { id: id })
         .getOne();
 
-        // user 조인한 reviews 만들기
-        const reviews: any = await getRepository(Review)
+      // user 조인한 reviews 만들기
+      const reviews: any = await getRepository(Review)
         .createQueryBuilder('review')
         .leftJoinAndSelect('review.user', 'user')
         .where('review.houseId = :houseId', { houseId: house.id })
         .getMany();
 
-        house['reviews'] = reviews;
+      house['reviews'] = reviews;
 
-        // avgRating 만들기
+      // avgRating 만들기
       let avgRating: number = 0;
       if (house !== undefined && house.reviews.length > 0) {
         for (let i = 0; i < house.reviews.length; i++) {
@@ -381,11 +416,11 @@ export const GetHouse = async (req: Request, res: Response) => {
 
       // 이미 favs한 매물인지 확인하기 true, false
       const fav: any = await getRepository(Favorite)
-      .createQueryBuilder('favorite')
-      .where('favorite.userId = :userId', {userId: decode.userId})
-      .andWhere('favorite.houseId = :houseId', {houseId: id})
-      .getOne();
-      
+        .createQueryBuilder('favorite')
+        .where('favorite.userId = :userId', { userId: decode.userId })
+        .andWhere('favorite.houseId = :houseId', { houseId: id })
+        .getOne();
+
       const favsNow: boolean = fav ? true : false;
       house['favsNow'] = favsNow;
 
@@ -399,7 +434,6 @@ export const GetHouse = async (req: Request, res: Response) => {
 // * PUT
 // * /houses/:id
 export const PutHouse = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
   // ! 이미지 수정기능은 ??
   // 토큰 내 User ID와 해당 매물의 작성자(userId)가 일치하는지 확인한다.
   // 요청받은 정보를 req.file과 req.body로 확인하고 DB를 수정한다.
@@ -433,9 +467,6 @@ export const PutHouse = async (req: Request, res: Response) => {
       } = req.body;
 
       const { id } = req.params;
-
-      // ! 토큰 대신 임시 테스트용!
-      // const tempTokenUserId = 1;
 
       // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
       const house: any = await getRepository(House)
@@ -498,7 +529,6 @@ export const PutHouse = async (req: Request, res: Response) => {
 // * DELETE
 // * /houses/:id
 export const DeleteHouse = async (req: Request, res: Response) => {
-  // ! 토큰 확인한다.
   // 토큰 내 User ID와 해당 매물의 작성자(userId)가 일치하는지 확인한다.
   // req.params.id로 해당 매물을 DB에서 삭제한다.
   const bearerAuth: any = req.headers.authorization;

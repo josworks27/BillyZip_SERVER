@@ -4,4 +4,4 @@ export const favsRouter = Router();
 
 favsRouter.post('/', favsController.PostFavs);
 favsRouter.get('/', favsController.GetFavs);
-favsRouter.delete('/', favsController.DeleteFavs);
+favsRouter.delete('/:id', favsController.DeleteFavs);
