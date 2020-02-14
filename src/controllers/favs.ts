@@ -78,14 +78,14 @@ export const GetFavs = async (req: Request, res: Response) => {
 };
 
 // * DELETE
-// * /favs
+// * /favs/:id
 export const DeleteFavs = async (req: Request, res: Response) => {
   // favs에서 삭제 누르면 favid 찾아서 삭제
   // 자신만 지울 수 있다.
   // favs는 한 한 명의 유저가 하나의 매물만 신청할 수 있기 때문에
   // favId만 알면 바로 지울 수 있다.
 
-  const { favId } = req.body;
+  const { id } = req.params;
   const bearerAuth: any = req.headers.authorization;
   const token = bearerAuth.split('Bearer ')[1];
 
@@ -95,7 +95,7 @@ export const DeleteFavs = async (req: Request, res: Response) => {
         .createQueryBuilder()
         .delete()
         .from(Favorite)
-        .where('favorite.id = :id', { id: favId })
+        .where('favorite.id = :id', { id: id })
         .andWhere('favorite.userId = :userId', { userId: decode.userId })
         .execute();
 
