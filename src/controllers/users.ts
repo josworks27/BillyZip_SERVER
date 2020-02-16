@@ -56,6 +56,7 @@ export const PostSignup = async (req: Request, res: Response) => {
 export const PostSignin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+
     const userEmail: any = await User.findOne({ email: email });
 
     if (userEmail) {
@@ -124,7 +125,10 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
         // 현재 구독 플랜이 없는 것이 곧 살고 있는 집이 없는 것이다
         // userInfo => []; // 빈 배열
         if (userInfo.length === 0) {
-          res.status(404).json('현재 구독하신 모델이 없습니다');
+          // 데이터가 없는 것이 정상일 수 있는 상황
+          // 204 : No contents
+
+          res.status(204).json(userInfo);
         } else {
           // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
           const livingHouse = await getConnection()
@@ -227,41 +231,40 @@ export const PutMyInfo = async (req: Request, res: Response) => {
       try {
         const { id } = req.params;
         const { name, gender, birth, password, email, mobile } = req.body;
-        const hashedPwd = bcrypt.hashSync(password, 10);
-        await getConnection()
-          .createQueryBuilder()
-          .update(User)
-          .set({
-            name: name,
-            gender: gender,
-            birth: birth,
-            password: hashedPwd,
-            email: email,
-            mobile: mobile,
-          })
-          .where('user.id =:id', { id: decode.userId })
-          .execute();
-        // 수정된 사용자 정보
-        const updatedInfo = await getConnection()
-          .createQueryBuilder()
-          .select([
-            'user.name',
-            'user.gender',
-            'user.birth',
-            'user.email',
-            'user.mobile',
-            'user.password',
-          ])
-          .from(User, 'user')
-          .where('user.id =:id', { id: decode.userId })
-          .getOne();
 
-        res.json(updatedInfo);
+        if (
+          name === undefined ||
+          gender === undefined ||
+          gender === undefined ||
+          password === undefined ||
+          email === undefined ||
+          mobile === undefined
+        ) {
+          res.status(400).json('변경할 내용을 입력하세요');
+        } else {
+          const hashedPwd = bcrypt.hashSync(password, 10);
+
+          await getConnection()
+            .createQueryBuilder()
+            .update(User)
+            .set({
+              name: name,
+              gender: gender,
+              birth: birth,
+              password: hashedPwd,
+              email: email,
+              mobile: mobile,
+            })
+            .where('user.id =:id', { id: decode.userId })
+            .execute();
+
+          res.status(200).json('비밀번호가 변경되었습니다');
+        }
       } catch (error) {
         // user DB에 필수 입력 하지 않을 경우
         // 예를 들어, user.name을 값을 입력하지 않을 경우,
         // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
-        res.status(400).json({ error: error.message });
+        res.status(400).json('변경할 비밀번호를 입력해주세요');
       }
     } else {
       // 토큰 인증 실패
