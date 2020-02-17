@@ -1,7 +1,8 @@
+import server from './socket';
 import app from './index';
 
 // Express Server Connection
-const server = app.listen(app.get('port'), () =>
+server.listen(app.get('port'), () =>
   console.log(`BillyZip App Listening on PORT ${app.get('port')}`),
 );
 
