@@ -257,7 +257,7 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
           type: type ? type : Not('null'),
           year: year ? LessThanOrEqual(year) : Not('null'),
           access: access ? LessThanOrEqual(access) : Not('null'),
-          adminDistrict: adminDistrict ? adminDistrict : Not('null'),
+          adminDistrict: adminDistrict ? Like(`%${adminDistrict}%`) : Not('null'),
         },
         order: {
           updatedAt: 'DESC',
