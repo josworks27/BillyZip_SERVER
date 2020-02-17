@@ -11,21 +11,24 @@ const client = twilio(accountSid, authToken);
 // ! 유저 전화번호로 요청이 오면 임시객체로 인증번호와 유저 전화번호를 비교하는데 사용
 const tempAuthObj: { [index: string]: number } = {};
 
-// Generate a random number
-const authNumber = Math.floor(Math.random() * 10000);
 
 // * POST
 // * /auth
 export const postAuth = (req: Request, res: Response) => {
+  // Generate a random number
+  let { userPhoneNum } = req.body;
+  const authNumber = Math.floor(Math.random() * 10000);
+
   // 유저가 인증번호를 요청할 때의 로직
   // POST로 유저의 핸드폰 번호를 받으면 해당 번호로 인증번호를 보내준다.
-  let { userPhoneNum } = req.body;
-
-  // 유저 전화번호와 인증번호를 임시로 저장
-  tempAuthObj[userPhoneNum] = authNumber;
-
+  
   if (userPhoneNum !== null) {
+    // 유저 전화번호와 인증번호를 임시로 저장
+    tempAuthObj[userPhoneNum] = authNumber;
+    console.log(tempAuthObj);
+
     userPhoneNum = `+82${userPhoneNum.slice(1)}`;
+    console.log(userPhoneNum);
 
     const messaageResult = client.messages.create({
       body: `BillyZip 회원가입 인증번호 ${authNumber}`,
