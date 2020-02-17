@@ -272,3 +272,36 @@ export const PutMyInfo = async (req: Request, res: Response) => {
     }
   });
 };
+
+// PUT
+// /auth/mobile
+// jwt verify 필요 : Bearer Authorization
+// 인증 번호 성공 - 휴대폰 번호 변경
+export const PutMobile = async (req: Request, res: Response) => {
+  const bearerAuth: any = req.headers.authorization;
+
+  const token = bearerAuth.split('Bearer ')[1];
+
+  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
+    if (decode) {
+      try {
+        const { userPhoneNum } = req.body;
+        await getConnection()
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            mobile: userPhoneNum,
+          })
+          .where('user.id =:id', { id: decode.userId })
+          .execute();
+
+        res.status(200).json('휴대폰 번호가 변경되었습니다');
+      } catch (error) {
+        res.status(400).json('인증번호가 불일치합니다');
+      }
+    } else {
+      // 토큰 인증 실패
+      res.sendStatus(401);
+    }
+  });
+};

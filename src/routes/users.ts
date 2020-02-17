@@ -9,3 +9,4 @@ usersRouter.get('/:id/currentInfo', usersController.GetCurrentInfo);
 usersRouter.get('/:id/list', usersController.GetList);
 usersRouter.get('/:id/myInfo', usersController.GetMyInfo);
 usersRouter.put('/:id/myInfo', usersController.PutMyInfo);
+usersRouter.put('/mobile', usersController.PutMobile);
