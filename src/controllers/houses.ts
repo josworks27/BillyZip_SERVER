@@ -16,6 +16,7 @@ import {
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import convertHouseProperties from '../util/convertHouseProperties';
+import { ChainableTemporaryCredentials } from 'aws-sdk';
 
 // * POST
 // * /houses
@@ -118,7 +119,7 @@ export const PostHouse = async (req: Request, res: Response) => {
         }
       }
 
-      res.status(200).json({houseId: newHouse.id});
+      res.status(200).json({ houseId: newHouse.id });
     } else {
       res.sendStatus(404);
     }
@@ -283,7 +284,7 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
       });
 
       for (let i = 0; i < houses.length; i++) {
-        let avgRating: number = 0;
+        let avgRating = 0;
         if (houses[i].reviews.length > 0) {
           for (let j = 0; j < houses[i].reviews.length; j++) {
             avgRating += houses[i].reviews[j].rating;
@@ -333,7 +334,7 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
         });
 
         for (let i = 0; i < houses.length; i++) {
-          let avgRating: number = 0;
+          let avgRating = 0;
           if (houses[i].reviews.length > 0) {
             for (let j = 0; j < houses[i].reviews.length; j++) {
               avgRating += houses[i].reviews[j].rating;
@@ -376,7 +377,7 @@ export const GetPartHouses = async (req: Request, res: Response) => {
     if (decode) {
       const { type } = req.params;
 
-      const typeHouses = await getRepository(House)
+      const typeHouses: any = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.images', 'image')
         .leftJoinAndSelect('house.reviews', 'review')
@@ -384,9 +385,25 @@ export const GetPartHouses = async (req: Request, res: Response) => {
         .orderBy('house.updated_at', 'DESC')
         .getMany();
 
+        console.log(typeHouses);
+
+      // avgRating 만들기
+      for (let i = 0; i < typeHouses.length; i++) {
+        let avgRating = 0;
+        if (typeHouses[i].reviews.length > 0) {
+          for (let j = 0; j < typeHouses[i].reviews.length; j++) {
+            avgRating += typeHouses[i].reviews[j].rating;
+          }
+          avgRating = avgRating / typeHouses[i].reviews.length;
+          typeHouses[i]['avgRating'] = avgRating;
+        } else {
+          typeHouses[i]['avgRating'] = 0;
+        }
+      }
+
       res.status(200).json(typeHouses);
     } else {
-      res.sendStatus(404);
+      res.sendStatus(401);
     }
   });
 };
@@ -421,7 +438,7 @@ export const GetHouse = async (req: Request, res: Response) => {
       house['reviews'] = reviews;
 
       // avgRating 만들기
-      let avgRating: number = 0;
+      let avgRating = 0;
       if (house !== undefined && house.reviews.length > 0) {
         for (let i = 0; i < house.reviews.length; i++) {
           avgRating += house.reviews[i].rating;
