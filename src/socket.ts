@@ -5,18 +5,29 @@ const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 
 io.on('connection', (socket: any) => {
-
-  // 클라이언트로부터의 메시지가 수신되면
   socket.on('chat', (data: any) => {
-    console.log('Message from %s: %s', socket.name, data.msg);
-
-    // 접속된 모든 클라이언트에게 메시지를 전송한다
+    console.log('클라이언트에서 온 메시지: ', data.msg);
     const msg = {
-      msg: data.msg
+      msg: data.msg,
     };
     io.emit('chat', msg);
-
   });
+
+  // socket.on('leaveRoom', (num, name) => {
+  //   socket.leave(room[num], () => {
+  //     console.log(name + ' leave a ' + room[num]);
+  //     io.to(room[num]).emit('leaveRoom', num, name);
+  //   });
+  // });
+
+  // socket.on('joinRoom', (num, name) => {
+  //   socket.join(room[num], () => {
+  //     console.log(name + ' join a ' + room[num]);
+  //     io.to(room[num]).emit('joinRoom', num, name);
+  //   });
+  // });
+
+  // socket.on('chat', (num, name, msg) => {});
 });
 
 export default server;

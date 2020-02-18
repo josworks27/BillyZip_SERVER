@@ -21,6 +21,9 @@ export class Image extends BaseEntity {
   @Column()
   fileName!: string;
 
+  @Column({ type: 'boolean'})
+  mainImage!: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

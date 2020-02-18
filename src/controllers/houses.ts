@@ -96,15 +96,29 @@ export const PostHouse = async (req: Request, res: Response) => {
       // 반복문으로 여러장의 새로운 Image 생성하기
       for (let i = 0; i < req.files.length; i++) {
         const { originalname, location } = req.files[i];
-        const newImage = new Image();
-        newImage.filePath = location;
-        newImage.fileName = originalname;
-        newImage.house = newHouse;
-        newImage.isActive = true;
-        await newImage.save();
+
+        const imageName = originalname.split('.');
+
+        if (imageName[0] === 'mainImage') {
+          const newImage = new Image();
+          newImage.filePath = location;
+          newImage.fileName = originalname;
+          newImage.house = newHouse;
+          newImage.mainImage = true;
+          newImage.isActive = true;
+          await newImage.save();
+        } else {
+          const newImage = new Image();
+          newImage.filePath = location;
+          newImage.fileName = originalname;
+          newImage.house = newHouse;
+          newImage.mainImage = false;
+          newImage.isActive = true;
+          await newImage.save();
+        }
       }
 
-      res.status(200).json(newHouse);
+      res.status(200).json({houseId: newHouse.id});
     } else {
       res.sendStatus(404);
     }
@@ -184,6 +198,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
             .leftJoinAndSelect('house.reviews', 'review')
             .leftJoinAndSelect('house.images', 'image')
             .where('house.id = :id', { id: Number(sortArr[i][0]) })
+            // .orderBy('image.id', 'ASC')
             .getOne();
           rankResult.avgRating = sortArr[i][1];
           rankHouses.push(rankResult);
@@ -195,6 +210,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
             .leftJoinAndSelect('house.reviews', 'review')
             .leftJoinAndSelect('house.images', 'image')
             .where('house.id = :id', { id: Number(sortArr[i][0]) })
+            // .orderBy('image.id', 'ASC')
             .getOne();
           rankResult.avgRating = sortArr[i][1];
           rankHouses.push(rankResult);
@@ -257,7 +273,9 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
           type: type ? type : Not('null'),
           year: year ? LessThanOrEqual(year) : Not('null'),
           access: access ? LessThanOrEqual(access) : Not('null'),
-          adminDistrict: adminDistrict ? Like(`%${adminDistrict}%`) : Not('null'),
+          adminDistrict: adminDistrict
+            ? Like(`%${adminDistrict}%`)
+            : Not('null'),
         },
         order: {
           updatedAt: 'DESC',
@@ -336,7 +354,7 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
             updatedAt: 'DESC',
           },
         });
-        
+
         res.status(200).json(houses);
       }
     } else {
