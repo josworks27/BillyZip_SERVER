@@ -103,7 +103,7 @@ export const GetSignout = (req: Request, res: Response) => {
 };
 
 // GET
-// /users/:id/current-info
+// /users/current-info
 // jwt verify 필요 : Bearer Authorization
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
@@ -113,7 +113,6 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
-        const { id } = req.params;
         // 사용자의 현재 구독 플랜(currentPlan) + 살고 있는 집(livingHouse)
         const userInfo = await getConnection()
           .createQueryBuilder()
@@ -150,7 +149,7 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
   });
 };
 // GET
-// /users/:id/list
+// /users/list
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
 // jwt verify 필요 : Bearer Authorization
@@ -162,7 +161,6 @@ export const GetList = async (req: Request, res: Response) => {
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
-        const { id } = req.params;
         const houseList = await getRepository(House)
           .createQueryBuilder('house')
           .leftJoinAndSelect('house.user', 'houses')
@@ -182,7 +180,7 @@ export const GetList = async (req: Request, res: Response) => {
 };
 
 // GET
-// /users/:id/my-info
+// /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const GetMyInfo = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
@@ -192,7 +190,6 @@ export const GetMyInfo = async (req: Request, res: Response) => {
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
-        const { id } = req.params;
         const myInfo = await getConnection()
           .createQueryBuilder()
           .select([
@@ -219,7 +216,7 @@ export const GetMyInfo = async (req: Request, res: Response) => {
 };
 
 // PUT
-// /users/:id/my-info
+// /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const PutMyInfo = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
@@ -229,7 +226,6 @@ export const PutMyInfo = async (req: Request, res: Response) => {
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
       try {
-        const { id } = req.params;
         const { name, gender, birth, password, email, mobile } = req.body;
 
         if (
