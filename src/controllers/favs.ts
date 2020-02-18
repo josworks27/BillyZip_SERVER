@@ -5,9 +5,11 @@ import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
+import { Image } from '../entities/Image';
+import { WSAEHOSTUNREACH, SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
 
-// POST
-// /favs
+// * POST
+// * /favs
 export const PostFavs = async (req: Request, res: Response) => {
   const bearerAuth: any = req.headers.authorization;
 
@@ -52,8 +54,8 @@ export const PostFavs = async (req: Request, res: Response) => {
   });
 };
 
-// GET
-// /favs
+// * GET
+// * /favs
 export const GetFavs = async (req: Request, res: Response) => {
   // ! 토큰인증 !!!
   // 풋터에 있는 favs을 눌렀을 때 불러오는 로직
@@ -63,13 +65,26 @@ export const GetFavs = async (req: Request, res: Response) => {
 
   jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
     if (decode) {
-      const favs = await getRepository(Favorite)
+      const favs: any = await getRepository(Favorite)
         .createQueryBuilder('favorite')
         .leftJoinAndSelect('favorite.user', 'user')
         .leftJoinAndSelect('favorite.house', 'house')
         .where('favorite.userId = :userId', { userId: decode.userId })
         .getMany();
 
+        console.log(favs);
+
+        // 서브쿼리가 대신 image 조인한 house로 favs의 house 대체
+        for (let i = 0; i < favs.length; i++) {
+          const house = await getRepository(House)
+          .createQueryBuilder('house')
+          .leftJoinAndSelect('house.images', 'image')
+          .where('house.id = :id', { id: favs[i].house.id})
+          .getOne();
+
+          favs[i]['house'] = house;
+        }
+        
       res.status(200).json(favs);
     } else {
       res.sendStatus(404);
@@ -80,11 +95,6 @@ export const GetFavs = async (req: Request, res: Response) => {
 // * DELETE
 // * /favs/:id
 export const DeleteFavs = async (req: Request, res: Response) => {
-  // favs에서 삭제 누르면 favid 찾아서 삭제
-  // 자신만 지울 수 있다.
-  // favs는 한 한 명의 유저가 하나의 매물만 신청할 수 있기 때문에
-  // favId만 알면 바로 지울 수 있다.
-
   const { id } = req.params;
   const bearerAuth: any = req.headers.authorization;
   const token = bearerAuth.split('Bearer ')[1];
@@ -95,7 +105,7 @@ export const DeleteFavs = async (req: Request, res: Response) => {
         .createQueryBuilder()
         .delete()
         .from(Favorite)
-        .where('favorite.id = :id', { id: id })
+        .where('favorite.houseId = :houseId', { houseId: id })
         .andWhere('favorite.userId = :userId', { userId: decode.userId })
         .execute();
 
@@ -104,6 +114,8 @@ export const DeleteFavs = async (req: Request, res: Response) => {
       } else {
         res.sendStatus(404);
       }
+    } else {
+      res.sendStatus(401);
     }
   });
 };
