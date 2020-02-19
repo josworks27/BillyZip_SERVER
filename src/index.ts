@@ -15,6 +15,7 @@ import { favsRouter } from './routes/favs';
 import { applicationRouter } from './routes/application';
 import { paymentRouter } from './routes/payment';
 import { authRouter } from './routes/auth';
+import { forumRouter } from './routes/forum';
 
 // Connect typeORM mysql
 createConnection()
@@ -37,7 +38,6 @@ app.use(
 );
 app.use(cookieParser());
 app.use(morgan('dev'));
-// app.use(cors());
 app.use(
   cors({
     origin: ['http://192.168.219.102'],
@@ -56,5 +56,6 @@ app.use('/favs', favsRouter);
 app.use('/application', applicationRouter);
 app.use('/payment', paymentRouter);
 app.use('/auth', authRouter);
+app.use('/forum', forumRouter);
 
 export default app;

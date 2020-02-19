@@ -10,11 +10,13 @@ io.on('connection', (socket: any) => {
     socket.join(userId, () => {
       console.log(`서버 메세지: ${userId}의 룸입니다.`);
     });
+    io.to(userId).emit('joinRoom', 'a user connected');
   });
 
   // 1:1 룸으로 메세지 보내기
-  socket.on('chat', (userId: string, msg: string) => {
-    io.to(userId).emit('chat', msg);
+  socket.on('chat', (userId: string, msg: any, name: string) => {
+    console.log(name + '이(가) 접속하였습니다.');
+    io.to(userId).emit('chat', `<Button title='${name}'/> ${msg}`);
   });
 });
 
