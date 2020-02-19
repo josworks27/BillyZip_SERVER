@@ -13,8 +13,6 @@ import {
   LessThanOrEqual,
   Like,
 } from 'typeorm';
-import * as jwt from 'jsonwebtoken';
-import jwtObj from '../config/jwt';
 import convertHouseProperties from '../util/convertHouseProperties';
 import createAvgRatingHelper from '../util/avgRatingHelper';
 import authHelper from '../util/authHelper';

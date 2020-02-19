@@ -51,7 +51,7 @@ export const postReview = async (req: Request, res: Response) => {
 
     res.json(newReview);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -71,7 +71,7 @@ export const putReview = async (req: Request, res: Response) => {
       .execute();
     res.json(putResult);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -91,6 +91,6 @@ export const deleteReview = async (req: Request, res: Response) => {
       .execute();
     res.json(deleteResult);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };

@@ -78,7 +78,7 @@ export const PostSignin = async (req: Request, res: Response) => {
           },
         );
 
-        res.status(200).json({ token: token });
+        res.status(200).json({ token: token, userId: userEmail.id, userName: userEmail.name });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
         res.status(401).json('비밀번호가 일치하지 않아요');
