@@ -5,8 +5,6 @@ import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
-import { Image } from '../entities/Image';
-import { WSAEHOSTUNREACH, SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
 
 // * POST
 // * /favs
@@ -72,19 +70,32 @@ export const GetFavs = async (req: Request, res: Response) => {
         .where('favorite.userId = :userId', { userId: decode.userId })
         .getMany();
 
-        console.log(favs);
+      console.log(favs);
 
-        // 서브쿼리가 대신 image 조인한 house로 favs의 house 대체
-        for (let i = 0; i < favs.length; i++) {
-          const house = await getRepository(House)
+      // 서브쿼리가 대신 image 조인한 house로 favs의 house 대체
+      for (let i = 0; i < favs.length; i++) {
+        const house: any = await getRepository(House)
           .createQueryBuilder('house')
           .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: favs[i].house.id})
+          .leftJoinAndSelect('house.reviews', 'review')
+          .where('house.id = :id', { id: favs[i].house.id })
           .getOne();
 
-          favs[i]['house'] = house;
+        // avgRating 추가
+        let avgRating = 0;
+        if (house !== undefined && house.reviews.length > 0) {
+          for (let i = 0; i < house.reviews.length; i++) {
+            avgRating += house.reviews[i].rating;
+          }
+          avgRating = avgRating / house.reviews.length;
+          house['avgRating'] = avgRating;
+        } else {
+          house['avgRating'] = 0;
         }
-        
+
+        favs[i]['house'] = house;
+      }
+
       res.status(200).json(favs);
     } else {
       res.sendStatus(404);
