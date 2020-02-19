@@ -5,6 +5,7 @@ import { getConnection, getRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import * as bcrypt from 'bcrypt';
+import authHelper from '../util/authHelper';
 
 // POST
 // /users/signup
@@ -106,47 +107,44 @@ export const GetSignout = (req: Request, res: Response) => {
 // /users/current-info
 // jwt verify 필요 : Bearer Authorization
 export const GetCurrentInfo = async (req: Request, res: Response) => {
-  const bearerAuth: any = req.headers.authorization;
+  const authResult = authHelper(req.headers.authorization);
 
-  const token = bearerAuth.split('Bearer ')[1];
+  if (authResult.decode) {
+    try {
+      const { id } = req.params;
+      // 사용자의 현재 구독 플랜(currentPlan) + 살고 있는 집(livingHouse)
+      const userInfo = await getConnection()
+        .createQueryBuilder()
+        .select(['user.livingHouse'])
+        .from(User, 'user')
+        .where('user.id =:id', { id: authResult.decode.userId })
+        .getMany();
+      // console.log('userInfo :: ', userInfo);
+      // 현재 구독 플랜이 없는 것이 곧 살고 있는 집이 없는 것이다
+      // userInfo => []; // 빈 배열
+      if (userInfo.length === 0) {
+        // 데이터가 없는 것이 정상일 수 있는 상황
+        // 204 : No contents
 
-  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    if (decode) {
-      try {
-        // 사용자의 현재 구독 플랜(currentPlan) + 살고 있는 집(livingHouse)
-        const userInfo = await getConnection()
+        res.status(204).json(userInfo);
+      } else {
+        // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
+        const livingHouse = await getConnection()
           .createQueryBuilder()
-          .select(['user.livingHouse'])
-          .from(User, 'user')
-          .where('user.id =:id', { id: decode.userId })
+          .select(['house'])
+          .from(House, 'house')
+          .where('house.id =:id', { id: userInfo[0].livingHouse })
           .getMany();
-        // console.log('userInfo :: ', userInfo);
-        // 현재 구독 플랜이 없는 것이 곧 살고 있는 집이 없는 것이다
-        // userInfo => []; // 빈 배열
-        if (userInfo.length === 0) {
-          // 데이터가 없는 것이 정상일 수 있는 상황
-          // 204 : No contents
 
-          res.status(204).json(userInfo);
-        } else {
-          // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
-          const livingHouse = await getConnection()
-            .createQueryBuilder()
-            .select(['house'])
-            .from(House, 'house')
-            .where('house.id =:id', { id: userInfo[0].livingHouse })
-            .getMany();
-
-          res.status(200).json(livingHouse);
-        }
-      } catch (error) {
-        res.status(404).json({ error: error.message });
+        res.status(200).json(livingHouse);
       }
-    } else {
-      // 토큰 인증 실패
-      res.sendStatus(401);
+    } catch (error) {
+      res.status(404).json({ error: error.message });
     }
-  });
+  } else {
+    // 토큰 인증 실패
+    res.sendStatus(401);
+  }
 };
 // GET
 // /users/list
@@ -154,119 +152,110 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 // 매물리스트 가져오기 위해서 houseId === id
 // jwt verify 필요 : Bearer Authorization
 export const GetList = async (req: Request, res: Response) => {
-  const bearerAuth: any = req.headers.authorization;
+  const authResult = authHelper(req.headers.authorization);
 
-  const token = bearerAuth.split('Bearer ')[1];
+  if (authResult.decode) {
+    try {
+      const { id } = req.params;
+      const houseList = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.user', 'houses')
+        .where('house.userId = :userId', { userId: authResult.decode.userId })
+        .getMany();
 
-  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    if (decode) {
-      try {
-        const houseList = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.user', 'houses')
-          .where('house.userId = :userId', { userId: decode.userId })
-          .getMany();
-
-        res.send(houseList);
-      } catch (error) {
-        // userId의 매물 정보가 없을 경우
-        res.status(404).json({ error: error.message });
+      res.send(houseList);
+    } catch (error) {
+      // userId의 매물 정보가 없을 경우
+      res.status(404).json({ error: error.message });
       }
     } else {
       // 토큰 인증 실패
       res.sendStatus(401);
-    }
-  });
+  }
 };
 
 // GET
 // /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const GetMyInfo = async (req: Request, res: Response) => {
-  const bearerAuth: any = req.headers.authorization;
+  const authResult = authHelper(req.headers.authorization);
 
-  const token = bearerAuth.split('Bearer ')[1];
-
-  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    if (decode) {
-      try {
-        const myInfo = await getConnection()
-          .createQueryBuilder()
-          .select([
-            'user.name',
-            'user.gender',
-            'user.birth',
-            'user.email',
-            'user.mobile',
-            'user.password',
-          ])
-          .from(User, 'user')
-          .where('user.id =:id', { id: decode.userId })
-          .getOne();
-        res.json(myInfo);
-      } catch (error) {
-        // 서버가 요청받은 리소스를 찾을 수 없는 상태 코드, 404
-        res.status(404).json({ error: error.message });
-      }
-    } else {
-      // 토큰 인증 실패
-      res.sendStatus(401);
+  if (authResult.decode) {
+    try {
+      const { id } = req.params;
+      const myInfo = await getConnection()
+        .createQueryBuilder()
+        .select([
+          'user.name',
+          'user.gender',
+          'user.birth',
+          'user.email',
+          'user.mobile',
+          'user.password',
+        ])
+        .from(User, 'user')
+        .where('user.id =:id', { id: authResult.decode.userId })
+        .getOne();
+      res.json(myInfo);
+    } catch (error) {
+      // 서버가 요청받은 리소스를 찾을 수 없는 상태 코드, 404
+      res.status(404).json({ error: error.message });
     }
-  });
+  } else {
+    // 토큰 인증 실패
+    res.sendStatus(401);
+  }
 };
 
 // PUT
 // /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const PutMyInfo = async (req: Request, res: Response) => {
-  const bearerAuth: any = req.headers.authorization;
+  const authResult = authHelper(req.headers.authorization);
 
-  const token = bearerAuth.split('Bearer ')[1];
+  if (authResult.decode) {
+    try {
+      const { id } = req.params;
+      const { name, gender, birth, password, email, mobile } = req.body;
 
-  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    if (decode) {
-      try {
-        const { name, gender, birth, password, email, mobile } = req.body;
+      if (
+        name === undefined ||
+        gender === undefined ||
+        gender === undefined ||
+        password === undefined ||
+        email === undefined ||
+        mobile === undefined
+      ) {
+        res.status(400).json('변경할 내용을 입력하세요');
+      } else {
+        const hashedPwd = bcrypt.hashSync(password, 10);
 
-        if (
-          name === undefined ||
-          gender === undefined ||
-          gender === undefined ||
-          password === undefined ||
-          email === undefined ||
-          mobile === undefined
-        ) {
-          res.status(400).json('변경할 내용을 입력하세요');
-        } else {
-          const hashedPwd = bcrypt.hashSync(password, 10);
+        await getConnection()
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            name: name,
+            gender: gender,
+            birth: birth,
+            password: hashedPwd,
+            email: email,
+            mobile: mobile,
+          })
+          .where('user.id =:id', { id: authResult.decode.userId })
+          .execute();
 
-          await getConnection()
-            .createQueryBuilder()
-            .update(User)
-            .set({
-              name: name,
-              gender: gender,
-              birth: birth,
-              password: hashedPwd,
-              email: email,
-              mobile: mobile,
-            })
-            .where('user.id =:id', { id: decode.userId })
-            .execute();
-
-          res.status(200).json('비밀번호가 변경되었습니다');
-        }
-      } catch (error) {
-        // user DB에 필수 입력 하지 않을 경우
-        // 예를 들어, user.name을 값을 입력하지 않을 경우,
-        // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
-        res.status(400).json('변경할 비밀번호를 입력해주세요');
+        res.status(200).json('비밀번호가 변경되었습니다');
       }
-    } else {
-      // 토큰 인증 실패
-      res.sendStatus(401);
+    } catch (error) {
+      // user DB에 필수 입력 하지 않을 경우
+      // 예를 들어, user.name을 값을 입력하지 않을 경우,
+      // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
+      res.status(400).json('변경할 비밀번호를 입력해주세요');
     }
-  });
+  } else {
+    // 토큰 인증 실패
+    res.sendStatus(401);
+  }
 };
 
 // PUT
@@ -274,30 +263,26 @@ export const PutMyInfo = async (req: Request, res: Response) => {
 // jwt verify 필요 : Bearer Authorization
 // 인증 번호 성공 - 휴대폰 번호 변경
 export const PutMobile = async (req: Request, res: Response) => {
-  const bearerAuth: any = req.headers.authorization;
+  const authResult = authHelper(req.headers.authorization);
 
-  const token = bearerAuth.split('Bearer ')[1];
+  if (authResult.decode) {
+    try {
+      const { userPhoneNum } = req.body;
+      await getConnection()
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          mobile: userPhoneNum,
+        })
+        .where('user.id =:id', { id: authResult.decode.userId })
+        .execute();
 
-  jwt.verify(token, jwtObj.secret, async (err: any, decode: any) => {
-    if (decode) {
-      try {
-        const { userPhoneNum } = req.body;
-        await getConnection()
-          .createQueryBuilder()
-          .update(User)
-          .set({
-            mobile: userPhoneNum,
-          })
-          .where('user.id =:id', { id: decode.userId })
-          .execute();
-
-        res.status(200).json('휴대폰 번호가 변경되었습니다');
-      } catch (error) {
-        res.status(400).json('인증번호가 불일치합니다');
-      }
-    } else {
-      // 토큰 인증 실패
-      res.sendStatus(401);
+      res.status(200).json('휴대폰 번호가 변경되었습니다');
+    } catch (error) {
+      res.status(400).json('인증번호가 불일치합니다');
     }
-  });
+  } else {
+    // 토큰 인증 실패
+    res.sendStatus(401);
+  }
 };
