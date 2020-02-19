@@ -36,20 +36,6 @@ export const PostApplication = async (req: Request, res: Response) => {
         // 매물의 최소 거주기간 확인
         const house: any = await House.findOne({ id: houseId });
 
-        // if (house.startTime < user.expiry) {
-        //   // 신청 가능
-        //   const apply = await new Application();
-        //   apply.house = house;
-        //   apply.user = user;
-        //   apply.isActive = true;
-        //   apply.save();
-
-        //   res.status(200).json('신청 성공');
-        // } else {
-        //   // 최소 거주기간 부족으로 신청 불가능
-        //   res.status(400).json('최소 거주기간 부족으로 신청 실패');
-        // }
-
         const apply = await new Application();
         apply.house = house;
         apply.user = user;
