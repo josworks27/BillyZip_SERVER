@@ -111,8 +111,6 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 
   if (authResult.decode) {
     try {
-      const { id } = req.params;
-      // 사용자의 현재 구독 플랜(currentPlan) + 살고 있는 집(livingHouse)
       const userInfo = await getConnection()
         .createQueryBuilder()
         .select(['user.livingHouse'])
@@ -156,7 +154,6 @@ export const GetList = async (req: Request, res: Response) => {
 
   if (authResult.decode) {
     try {
-      const { id } = req.params;
       const houseList = await getRepository(House)
         .createQueryBuilder('house')
         .leftJoinAndSelect('house.user', 'houses')
@@ -167,10 +164,10 @@ export const GetList = async (req: Request, res: Response) => {
     } catch (error) {
       // userId의 매물 정보가 없을 경우
       res.status(404).json({ error: error.message });
-      }
-    } else {
-      // 토큰 인증 실패
-      res.sendStatus(401);
+    }
+  } else {
+    // 토큰 인증 실패
+    res.sendStatus(401);
   }
 };
 
@@ -182,7 +179,6 @@ export const GetMyInfo = async (req: Request, res: Response) => {
 
   if (authResult.decode) {
     try {
-      const { id } = req.params;
       const myInfo = await getConnection()
         .createQueryBuilder()
         .select([
@@ -215,7 +211,6 @@ export const PutMyInfo = async (req: Request, res: Response) => {
 
   if (authResult.decode) {
     try {
-      const { id } = req.params;
       const { name, gender, birth, password, email, mobile } = req.body;
 
       if (
