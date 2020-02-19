@@ -104,7 +104,7 @@ export const GetSignout = (req: Request, res: Response) => {
 };
 
 // GET
-// /users/:id/current-info
+// /users/current-info
 // jwt verify 필요 : Bearer Authorization
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
@@ -147,7 +147,7 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
   }
 };
 // GET
-// /users/:id/list
+// /users/list
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
 // jwt verify 필요 : Bearer Authorization
@@ -167,15 +167,15 @@ export const GetList = async (req: Request, res: Response) => {
     } catch (error) {
       // userId의 매물 정보가 없을 경우
       res.status(404).json({ error: error.message });
-    }
-  } else {
-    // 토큰 인증 실패
-    res.sendStatus(401);
+      }
+    } else {
+      // 토큰 인증 실패
+      res.sendStatus(401);
   }
 };
 
 // GET
-// /users/:id/my-info
+// /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const GetMyInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
@@ -208,7 +208,7 @@ export const GetMyInfo = async (req: Request, res: Response) => {
 };
 
 // PUT
-// /users/:id/my-info
+// /users/my-info
 // jwt verify 필요 : Bearer Authorization
 export const PutMyInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
