@@ -16,7 +16,7 @@ import {
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import convertHouseProperties from '../util/convertHouseProperties';
-import { ChainableTemporaryCredentials } from 'aws-sdk';
+import createAvgRatingHelper from '../util/avgRatingHelper';
 
 // * POST
 // * /houses
@@ -265,7 +265,6 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
       );
 
       const { plan, type, year, access, adminDistrict } = convertedType;
-      console.log(convertedType);
 
       const houses: any = await getRepository(House).find({
         relations: ['amenity', 'reviews', 'images'],
@@ -283,23 +282,10 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
         },
       });
 
-      for (let i = 0; i < houses.length; i++) {
-        let avgRating = 0;
-        if (houses[i].reviews.length > 0) {
-          for (let j = 0; j < houses[i].reviews.length; j++) {
-            avgRating += houses[i].reviews[j].rating;
-          }
-          avgRating = avgRating / houses[i].reviews.length;
-          houses[i]['avgRating'] = avgRating;
-        } else {
-          houses[i]['avgRating'] = 0;
-        }
-      }
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
 
-      // console.log('houses 2 ', houses);
-      console.log('houses 2 ', houses.length);
-
-      res.status(200).json(houses);
+      res.status(200).json(avgRatingAddedHouses);
     } else {
       res.sendStatus(404);
     }
@@ -333,20 +319,10 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
           },
         });
 
-        for (let i = 0; i < houses.length; i++) {
-          let avgRating = 0;
-          if (houses[i].reviews.length > 0) {
-            for (let j = 0; j < houses[i].reviews.length; j++) {
-              avgRating += houses[i].reviews[j].rating;
-            }
-            avgRating = avgRating / houses[i].reviews.length;
-            houses[i]['avgRating'] = avgRating;
-          } else {
-            houses[i]['avgRating'] = 0;
-          }
-        }
+        // avgRating 추가하기
+        const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
 
-        res.status(200).json(houses);
+        res.status(200).json(avgRatingAddedHouses);
       } else {
         const houses: any = await getRepository(House).find({
           relations: ['amenity', 'reviews', 'images'],
@@ -385,23 +361,10 @@ export const GetPartHouses = async (req: Request, res: Response) => {
         .orderBy('house.updated_at', 'DESC')
         .getMany();
 
-        console.log(typeHouses);
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.multiple(typeHouses);
 
-      // avgRating 만들기
-      for (let i = 0; i < typeHouses.length; i++) {
-        let avgRating = 0;
-        if (typeHouses[i].reviews.length > 0) {
-          for (let j = 0; j < typeHouses[i].reviews.length; j++) {
-            avgRating += typeHouses[i].reviews[j].rating;
-          }
-          avgRating = avgRating / typeHouses[i].reviews.length;
-          typeHouses[i]['avgRating'] = avgRating;
-        } else {
-          typeHouses[i]['avgRating'] = 0;
-        }
-      }
-
-      res.status(200).json(typeHouses);
+      res.status(200).json(avgRatingAddedHouses);
     } else {
       res.sendStatus(401);
     }
@@ -437,17 +400,8 @@ export const GetHouse = async (req: Request, res: Response) => {
 
       house['reviews'] = reviews;
 
-      // avgRating 만들기
-      let avgRating = 0;
-      if (house !== undefined && house.reviews.length > 0) {
-        for (let i = 0; i < house.reviews.length; i++) {
-          avgRating += house.reviews[i].rating;
-        }
-        avgRating = avgRating / house.reviews.length;
-        house['avgRating'] = avgRating;
-      } else {
-        house['avgRating'] = 0;
-      }
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.single(house);
 
       // 이미 favs한 매물인지 확인하기 true, false
       const fav: any = await getRepository(Favorite)
@@ -457,9 +411,9 @@ export const GetHouse = async (req: Request, res: Response) => {
         .getOne();
 
       const favsNow: boolean = fav ? true : false;
-      house['favsNow'] = favsNow;
+      avgRatingAddedHouses['favsNow'] = favsNow;
 
-      res.status(200).json(house);
+      res.status(200).json(avgRatingAddedHouses);
     } else {
       res.sendStatus(404);
     }
@@ -558,7 +512,6 @@ export const PutHouse = async (req: Request, res: Response) => {
       res.sendStatus(404);
     }
   });
-  // 수정할 내용 받기 POST와 동일
 };
 
 // * DELETE

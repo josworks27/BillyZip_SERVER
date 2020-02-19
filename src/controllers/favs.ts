@@ -5,6 +5,7 @@ import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
+import createAvgRatingHelper from '../util/avgRatingHelper';
 
 // * POST
 // * /favs
@@ -82,18 +83,8 @@ export const GetFavs = async (req: Request, res: Response) => {
           .getOne();
 
         // avgRating 추가
-        let avgRating = 0;
-        if (house !== undefined && house.reviews.length > 0) {
-          for (let i = 0; i < house.reviews.length; i++) {
-            avgRating += house.reviews[i].rating;
-          }
-          avgRating = avgRating / house.reviews.length;
-          house['avgRating'] = avgRating;
-        } else {
-          house['avgRating'] = 0;
-        }
-
-        favs[i]['house'] = house;
+        const avgRatingAddedHouse = createAvgRatingHelper.single(house);
+        favs[i]['house'] = avgRatingAddedHouse;
       }
 
       res.status(200).json(favs);

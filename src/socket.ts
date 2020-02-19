@@ -19,11 +19,3 @@ io.on('connection', (socket: any) => {
 });
 
 export default server;
-
-// socket.on('chat', (data: any) => {
-//   console.log('클라이언트에서 온 메시지: ', data.msg);
-//   const msg = {
-//     msg: data.msg,
-//   };
-//   io.emit('chat', msg);
-// });
