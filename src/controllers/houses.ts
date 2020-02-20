@@ -16,6 +16,7 @@ import {
 import convertHouseProperties from '../util/convertHouseProperties';
 import createAvgRatingHelper from '../util/avgRatingHelper';
 import authHelper from '../util/authHelper';
+import ratingRangeHelper from '../util/ratingRangeHelper';
 
 // * POST
 // * /houses
@@ -175,32 +176,41 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
     console.log(sortArr);
 
+    // 점수대별 랜덤매물
+    const overFourHouses = ratingRangeHelper.overFourHouses(sortArr);
+
+    console.log(overFourHouses);
     const rankHouses: any = [];
 
-    if (sortArr.length > 3) {
+    if (overFourHouses.length > 3) {
       // 매물이 4개 이상일 때
       for (let i = 0; i < 4; i++) {
         const rankResult: any = await getRepository(House)
           .createQueryBuilder('house')
           .leftJoinAndSelect('house.reviews', 'review')
           .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: Number(sortArr[i][0]) })
+          .where('house.id = :id', { id: Number(overFourHouses[i][0]) })
           // .orderBy('image.id', 'ASC')
           .getOne();
-        rankResult.avgRating = sortArr[i][1];
+        rankResult.avgRating = overFourHouses[i][1];
         rankHouses.push(rankResult);
       }
     } else {
       // 매물이 4개 이하일 때
-      for (let i = 0; i < sortArr.length; i++) {
+      const overThreeHouses = ratingRangeHelper.overThreeUnderFourHouses(
+        sortArr,
+      );
+      const threeConcatFour = overFourHouses.concat(overThreeHouses);
+      console.log('콘캣 ? ', threeConcatFour);
+      for (let i = 0; i < 4; i++) {
         const rankResult: any = await getRepository(House)
           .createQueryBuilder('house')
           .leftJoinAndSelect('house.reviews', 'review')
           .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: Number(sortArr[i][0]) })
+          .where('house.id = :id', { id: Number(threeConcatFour[i][0]) })
           // .orderBy('image.id', 'ASC')
           .getOne();
-        rankResult.avgRating = sortArr[i][1];
+        rankResult.avgRating = threeConcatFour[i][1];
         rankHouses.push(rankResult);
       }
     }
