@@ -146,40 +146,39 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       .getMany();
 
     // * 각각의 매물의 리뷰 평균구하기
-    // 각 house의 rating을 담을 객체 생성
-    const temp: { [index: number]: number[] } = {};
-    const avgObj: { [index: number]: number } = {};
+    const avgRating: any = {};
 
     for (let i = 0; i < houses.length; i++) {
-      temp[i] = [];
-      for (let j = 0; j < houses[i].reviews.length; j++) {
-        temp[i].push(houses[i].reviews[j].rating);
-      }
-      const leng = temp[i].length;
-      if (leng === 0) {
-        avgObj[i + 1] = 0;
+      let avgTemp = 0;
+
+      if (houses[i].reviews.length > 0) {
+        for (let j = 0; j < houses[i].reviews.length; j++) {
+          avgTemp += houses[i].reviews[j].rating;
+        }
+        avgRating[houses[i].id] = avgTemp / houses[i].reviews.length;
       } else {
-        avgObj[i + 1] = temp[i].reduce((a, b) => a + b) / leng;
+        avgRating[houses[i].id] = 0;
       }
     }
 
-    // { '1': 3, '2': 3.5, '3': 2, '4': 2, '5': 2, '6': 2 }
+    console.log('avg ', avgRating);
 
     // 객체 내림차순으로 정렬
     // 정렬해서 4개만 필터링
     const sortArr = [];
-    for (const prop in avgObj) {
-      sortArr.push([prop, avgObj[prop]]);
+    for (const prop in avgRating) {
+      sortArr.push([prop, avgRating[prop]]);
     }
     sortArr.sort((a: any, b: any) => {
       return b[1] - a[1];
     });
 
-    // [[ '2', 3.5 ], [ '1', 3 ], [ '3', 2 ], [ '4', 2 ], [ '5', 2 ], [ '6', 2 ]]
+    console.log(sortArr);
 
     const rankHouses: any = [];
 
     if (sortArr.length > 3) {
+      // 매물이 4개 이상일 때
       for (let i = 0; i < 4; i++) {
         const rankResult: any = await getRepository(House)
           .createQueryBuilder('house')
@@ -192,6 +191,7 @@ export const GetMainHouses = async (req: Request, res: Response) => {
         rankHouses.push(rankResult);
       }
     } else {
+      // 매물이 4개 이하일 때
       for (let i = 0; i < sortArr.length; i++) {
         const rankResult: any = await getRepository(House)
           .createQueryBuilder('house')
@@ -219,6 +219,8 @@ export const GetMainHouses = async (req: Request, res: Response) => {
 
       randHouses.push(result);
     }
+
+    console.log('랭크 ?? ', rankHouses);
 
     res.status(200).json({ rank: rankHouses, rand: randHouses });
   } else {
