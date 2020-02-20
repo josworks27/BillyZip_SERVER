@@ -7,13 +7,11 @@ import authHelper from '../util/authHelper';
 
 // ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
 // * POST
-// * /houese/:id/comment
+// * /house/:id/comment
 export const postReview = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    // ! tokenId는 나중에 토큰에 있는 유저아이디로 바꿀 것!!
-    // const tokenId = 1;
     const id = Number(req.params.id);
     const { comment, rating } = req.body;
 
