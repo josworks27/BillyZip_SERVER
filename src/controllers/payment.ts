@@ -39,13 +39,22 @@ export const PostPayment = async (req: Request, res: Response) => {
       newPayment.isActive = true;
       await newPayment.save();
 
+      // userId를 이용해 user의 이름을 가져오기
+
+      const userName = await getConnection()
+        .createQueryBuilder()
+        .select(['user.name'])
+        .from(User, 'user')
+        .where('user.id=:id', { id: userId })
+        .getOne();
+
       // ! Twilio SMS로 유저 전화번호에 결제정보 보내주기
       await twilioHelper.paymentMsg(
         currentUser.name,
         `+82${currentUser.mobile.slice(1)}`,
       );
 
-      res.sendStatus(200);
+      res.status(200).json(userName);
     }
   } else {
     res.sendStatus(401);
