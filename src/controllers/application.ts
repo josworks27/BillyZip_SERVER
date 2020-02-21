@@ -23,9 +23,9 @@ export const PostApplication = async (req: Request, res: Response) => {
 
     // 중복되지 않을 떄 => 정상
     if (!checkApply) {
-      // 신청자 정보 가져오기, 구독기간 확인
+      // 신청자 정보 가져오기
       const user: any = await User.findOne({ id: authResult.decode.userId });
-      // 매물의 최소 거주기간 확인
+      // 매물 정보 가져오기
       const house: any = await House.findOne({ id: houseId });
 
       const apply = await new Application();
@@ -89,3 +89,8 @@ export const DeleteApplication = async (req: Request, res: Response) => {
     res.sendStatus(404);
   }
 };
+
+// * PUT
+// * /application
+
+// ! 집주인이 승락하고 이사한 날을 기준으로 expiry = new Data();
