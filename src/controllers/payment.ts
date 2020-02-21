@@ -20,33 +20,33 @@ export const PostPayment = async (req: Request, res: Response) => {
 
     if (paymentOption === undefined) {
       res.sendStatus(400);
+    } else {
+      // currentPlan 업데이트 하기
+      await getConnection()
+        .createQueryBuilder()
+        .update(User)
+        .set({ currentPlan: subscribePlan })
+        .where('id = :id', { id: userId })
+        .execute();
+
+      // payment에 위 정보 생성하기
+      const currentUser: any = await User.findOne({ id: userId });
+      const newPayment: any = new Payment();
+      newPayment.user = currentUser;
+      newPayment.subscribePlan = subscribePlan;
+      newPayment.paymentDate = paymentDate;
+      newPayment.paymentOption = paymentOption;
+      newPayment.isActive = true;
+      await newPayment.save();
+
+      // ! Twilio SMS로 유저 전화번호에 결제정보 보내주기
+      await twilioHelper.paymentMsg(
+        currentUser.name,
+        `+82${currentUser.mobile.slice(1)}`,
+      );
+
+      res.sendStatus(200);
     }
-
-    // currentPlan 업데이트 하기
-    await getConnection()
-      .createQueryBuilder()
-      .update(User)
-      .set({ currentPlan: subscribePlan })
-      .where('id = :id', { id: userId })
-      .execute();
-
-    // payment에 위 정보 생성하기
-    const currentUser: any = await User.findOne({ id: userId });
-    const newPayment: any = new Payment();
-    newPayment.user = currentUser;
-    newPayment.subscribePlan = subscribePlan;
-    newPayment.paymentDate = paymentDate;
-    newPayment.paymentOption = paymentOption;
-    newPayment.isActive = true;
-    await newPayment.save();
-
-    // ! Twilio SMS로 유저 전화번호에 결제정보 보내주기
-    await twilioHelper.paymentMsg(
-      currentUser.name,
-      `+82${currentUser.mobile.slice(1)}`,
-    );
-
-    res.sendStatus(200);
   } else {
     res.sendStatus(401);
   }
