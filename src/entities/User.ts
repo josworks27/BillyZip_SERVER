@@ -11,6 +11,7 @@ import { Review } from './Review';
 import { Application } from './Application';
 import { Favorite } from './Favorite';
 import { House } from './House';
+import { Payment } from './Payment';
 
 @Entity()
 export class User extends BaseEntity {
@@ -80,4 +81,11 @@ export class User extends BaseEntity {
     (house) => house.user,
   )
   houses!: House[];
+
+  // User(1) <-> Payment(*)
+  @OneToMany(
+    (type) => Payment,
+    (payment) => payment.user,
+  )
+  payments!: Payment[];
 }

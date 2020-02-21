@@ -156,11 +156,12 @@ export const GetList = async (req: Request, res: Response) => {
     try {
       const houseList = await getRepository(House)
         .createQueryBuilder('house')
-        .leftJoinAndSelect('house.user', 'houses')
+        .leftJoinAndSelect('house.user', 'user')
+        .leftJoinAndSelect('house.images', 'image')
         .where('house.userId = :userId', { userId: authResult.decode.userId })
         .getMany();
 
-      res.send(houseList);
+      res.status(200).json(houseList);
     } catch (error) {
       // userId의 매물 정보가 없을 경우
       res.status(404).json({ error: error.message });
