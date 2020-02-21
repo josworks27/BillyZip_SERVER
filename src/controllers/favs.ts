@@ -42,11 +42,10 @@ export const PostFavs = async (req: Request, res: Response) => {
 
       res.status(200).json(newFav);
     } else {
-      // 중복이면 400번
-      res.sendStatus(400);
+      res.sendStatus(409);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -79,7 +78,7 @@ export const GetFavs = async (req: Request, res: Response) => {
 
     res.status(200).json(favs);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -101,7 +100,7 @@ export const DeleteFavs = async (req: Request, res: Response) => {
       .execute();
 
     if (favResult.affected === 1) {
-      res.status(200).json('정상적으로 제거');
+      res.sendStatus(200);
     } else {
       res.sendStatus(404);
     }

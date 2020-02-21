@@ -34,13 +34,13 @@ export const PostApplication = async (req: Request, res: Response) => {
       apply.isActive = true;
       apply.save();
 
-      res.status(200).json('신청 성공');
+      res.sendStatus(200);
     } else {
       // 중복될 때
-      res.status(400).json('이미 신청한 매물입니다.');
+      res.sendStatus(400);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -59,7 +59,7 @@ export const GetApplication = async (req: Request, res: Response) => {
 
     res.status(200).json(apply);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -81,12 +81,12 @@ export const DeleteApplication = async (req: Request, res: Response) => {
       .execute();
 
     if (apply.affected === 1) {
-      res.status(200).json('삭제 완료');
+      res.sendStatus(200);
     } else if (apply.affected === 0) {
-      res.status(400).json('해당 매물 없음');
+      res.sendStatus(404);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 

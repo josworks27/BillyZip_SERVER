@@ -97,7 +97,7 @@ export const PostHouse = async (req: Request, res: Response) => {
 
       const imageName = originalname.split('.');
 
-      if (imageName[0] === 'mainImage') {
+      if (imageName[0] === 'mainImg') {
         const newImage = new Image();
         newImage.filePath = location;
         newImage.fileName = originalname;
@@ -118,7 +118,7 @@ export const PostHouse = async (req: Request, res: Response) => {
 
     res.status(200).json({ houseId: newHouse.id });
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -174,12 +174,9 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       return b[1] - a[1];
     });
 
-    console.log(sortArr);
-
     // 점수대별 랜덤매물
     const overFourHouses = ratingRangeHelper.overFourHouses(sortArr);
 
-    console.log(overFourHouses);
     const rankHouses: any = [];
 
     if (overFourHouses.length > 3) {
@@ -190,7 +187,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
           .leftJoinAndSelect('house.reviews', 'review')
           .leftJoinAndSelect('house.images', 'image')
           .where('house.id = :id', { id: Number(overFourHouses[i][0]) })
-          // .orderBy('image.id', 'ASC')
           .getOne();
         rankResult.avgRating = overFourHouses[i][1];
         rankHouses.push(rankResult);
@@ -208,7 +204,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
           .leftJoinAndSelect('house.reviews', 'review')
           .leftJoinAndSelect('house.images', 'image')
           .where('house.id = :id', { id: Number(threeConcatFour[i][0]) })
-          // .orderBy('image.id', 'ASC')
           .getOne();
         rankResult.avgRating = threeConcatFour[i][1];
         rankHouses.push(rankResult);
@@ -230,11 +225,9 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       randHouses.push(result);
     }
 
-    console.log('랭크 ?? ', rankHouses);
-
     res.status(200).json({ rank: rankHouses, rand: randHouses });
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -274,7 +267,7 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
 
     res.status(200).json(avgRatingAddedHouses);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -317,7 +310,7 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
       res.status(200).json(houses);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -386,7 +379,7 @@ export const GetHouse = async (req: Request, res: Response) => {
 
     res.status(200).json(avgRatingAddedHouses);
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -421,6 +414,9 @@ export const PutHouse = async (req: Request, res: Response) => {
     } = req.body;
 
     const { id } = req.params;
+
+    const images = req.files;
+    console.log('images is ', images);
 
     // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
     const house: any = await getRepository(House)
@@ -468,13 +464,18 @@ export const PutHouse = async (req: Request, res: Response) => {
         .where('id = :id', { id: id })
         .execute();
 
+      // ! 이미지 수정
+      // * image에서 houseId === id 전부 삭제
+      // * image에 새로운 이미지들로 다시 생성하기
+      // * image.house = id;
+
       res.sendStatus(200);
     } else {
       // 수정할 권한 없음
-      res.sendStatus(409);
+      res.sendStatus(401);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
 
@@ -520,9 +521,9 @@ export const DeleteHouse = async (req: Request, res: Response) => {
 
       res.sendStatus(200);
     } else {
-      res.sendStatus(409);
+      res.sendStatus(401);
     }
   } else {
-    res.sendStatus(404);
+    res.sendStatus(401);
   }
 };
