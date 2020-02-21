@@ -13,10 +13,10 @@ export const postAuth = async (req: Request, res: Response) => {
   if (userPhoneNum !== undefined) {
     tempAuthObj = await twilioHelper.auth(userPhoneNum);
 
-    res.status(200).json('인증번호 전송 성공');
+    res.sendStatus(200);
   } else {
     // 번호 입력안하고 인증번호 요청했을 떄
-    res.status(400).json('휴대폰 번호를 입력해주세요');
+    res.sendStatus(400);
   }
 };
 
@@ -34,23 +34,23 @@ export const postVerify = async (req: Request, res: Response) => {
       if (tempAuthObj[userPhoneNum] === Number(userVerifyNum)) {
         // 맞을 때: 200 응답
         delete tempAuthObj[userPhoneNum];
-        res.status(200).json('인증번호가 일치합니다');
+        res.sendStatus(200);
       } else {
         // 아닐 때: 401 응답
-        res.status(401).json('인증번호가 불일치합니다');
+        res.sendStatus(401);
       }
     } else {
       // 클라단 : userVerifyNum, userPhoneNum 데이터 둘 중 하나라도 입력하지 않을 때,
       // 클라단 : userPhoneNum 데이터를 입력하지 않은 경우
       if (userPhoneNum === undefined || userPhoneNum === '') {
-        res.status(401).json('변경할 휴대폰 번호를 입력해주세요');
+        res.status(400).json('변경할 휴대폰 번호를 입력해주세요');
       } else if (userVerifyNum === undefined) {
-        res.status(401).json('인증번호를 입력해주세요');
+        res.status(400).json('인증번호를 입력해주세요');
       } else {
-        res.status(401).json('변경할 휴대폰 번호를 입력해주세요2');
+        res.status(400).json('변경할 휴대폰 번호를 입력해주세요');
       }
     }
   } catch (error) {
-    res.status(500).json('서버 내부 오류');
+    res.sendStatus(500);
   }
 };

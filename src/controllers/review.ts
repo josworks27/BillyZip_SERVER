@@ -47,7 +47,7 @@ export const postReview = async (req: Request, res: Response) => {
 
     await newReview.save();
 
-    res.json(newReview);
+    res.status(200).json(newReview);
   } else {
     res.sendStatus(401);
   }
@@ -67,7 +67,7 @@ export const putReview = async (req: Request, res: Response) => {
       .set({ comment: comment, rating: rating })
       .where('id = :id', { id: commentId })
       .execute();
-    res.json(putResult);
+    res.status(200).json(putResult);
   } else {
     res.sendStatus(401);
   }
@@ -87,7 +87,7 @@ export const deleteReview = async (req: Request, res: Response) => {
       .from(Review)
       .where('id = :id', { id: commentId })
       .execute();
-    res.json(deleteResult);
+    res.status(200).json(deleteResult);
   } else {
     res.sendStatus(401);
   }

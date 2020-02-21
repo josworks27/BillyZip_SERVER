@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import authHelper from '../util/authHelper';
 import { User } from '../entities/User';
 import { getConnection, getRepository } from 'typeorm';
 import { Payment } from '../entities/Payment';
+import authHelper from '../util/authHelper';
 import twilioHelper from '../util/twilioHelper';
 
 // * POST
@@ -17,6 +17,10 @@ export const PostPayment = async (req: Request, res: Response) => {
     const { subscribePlan, paymentDate, paymentOption } = req.body;
     const { userId } = authResult.decode;
     // ! 디비: user에 currentPlan 업데이트 하기 / payment에 위 정보 생성하기
+
+    if (paymentOption === undefined) {
+      res.sendStatus(400);
+    }
 
     // currentPlan 업데이트 하기
     await getConnection()

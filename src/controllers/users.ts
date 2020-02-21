@@ -9,8 +9,6 @@ import authHelper from '../util/authHelper';
 
 // POST
 // /users/signup
-// 회원가입 구현
-// jwt verify 필요 없음
 export const PostSignup = async (req: Request, res: Response) => {
   try {
     const { email, password, name, mobile, gender, birth } = req.body;
@@ -39,12 +37,7 @@ export const PostSignup = async (req: Request, res: Response) => {
       res.status(200).json('회원가입이 완료되었습니다');
     }
   } catch (error) {
-    res.status(400).json({ error: error.message });
-
-    // 예를 들어, 필수입력 부분 중에 하나라도 필수 입력을 하지 않고
-    // 회원가입 시도 하면, catch가 에러를 잡아준다.
-    // 사용자가 모바일 번호 작성하지 않고, 회원가입 시도할 경우
-    // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -78,34 +71,31 @@ export const PostSignin = async (req: Request, res: Response) => {
           },
         );
 
-        res.status(200).json({ token: token, userId: userEmail.id, userName: userEmail.name });
+        res.status(200).json({
+          token: token,
+          userId: userEmail.id,
+          userName: userEmail.name,
+        });
       } else {
         // 사용자 비밀번호 일치하지 않을 때,
         res.status(401).json('비밀번호가 일치하지 않아요');
-        // 로그인 실패, 상태 코드 401
       }
     } else {
-      res.status(409).json('회원가입을 해주세요');
-      // 로그인 실패, 상태 코드 401
+      res.status(404).json('회원가입을 해주세요');
     }
   } catch (error) {
-    // 서버 내부 오류, 상태 코드 400
-    // 웹 서버가 요청사항을 수행할 수 없을 경우
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
 // GET
-
 // /users/signout
-// 현재 클라이언트 단에서 로그아웃 버튼 없음 : 추후 논의
 export const GetSignout = (req: Request, res: Response) => {
   res.send('signOut success!');
 };
 
 // GET
 // /users/current-info
-// jwt verify 필요 : Bearer Authorization
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
@@ -117,9 +107,7 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
         .from(User, 'user')
         .where('user.id =:id', { id: authResult.decode.userId })
         .getMany();
-      // console.log('userInfo :: ', userInfo);
-      // 현재 구독 플랜이 없는 것이 곧 살고 있는 집이 없는 것이다
-      // userInfo => []; // 빈 배열
+
       if (userInfo.length === 0) {
         // 데이터가 없는 것이 정상일 수 있는 상황
         // 204 : No contents
@@ -137,7 +125,7 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
         res.status(200).json(livingHouse);
       }
     } catch (error) {
-      res.status(404).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   } else {
     // 토큰 인증 실패
@@ -148,7 +136,6 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 // /users/list
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
-// jwt verify 필요 : Bearer Authorization
 export const GetList = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
@@ -163,18 +150,15 @@ export const GetList = async (req: Request, res: Response) => {
 
       res.status(200).json(houseList);
     } catch (error) {
-      // userId의 매물 정보가 없을 경우
-      res.status(404).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   } else {
-    // 토큰 인증 실패
     res.sendStatus(401);
   }
 };
 
 // GET
 // /users/my-info
-// jwt verify 필요 : Bearer Authorization
 export const GetMyInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
@@ -193,10 +177,9 @@ export const GetMyInfo = async (req: Request, res: Response) => {
         .from(User, 'user')
         .where('user.id =:id', { id: authResult.decode.userId })
         .getOne();
-      res.json(myInfo);
+      res.status(200).json(myInfo);
     } catch (error) {
-      // 서버가 요청받은 리소스를 찾을 수 없는 상태 코드, 404
-      res.status(404).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   } else {
     // 토큰 인증 실패
@@ -206,7 +189,6 @@ export const GetMyInfo = async (req: Request, res: Response) => {
 
 // PUT
 // /users/my-info
-// jwt verify 필요 : Bearer Authorization
 export const PutMyInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
@@ -222,7 +204,7 @@ export const PutMyInfo = async (req: Request, res: Response) => {
         email === undefined ||
         mobile === undefined
       ) {
-        res.status(400).json('변경할 내용을 입력하세요');
+        res.sendStatus(400);
       } else {
         const hashedPwd = bcrypt.hashSync(password, 10);
 
@@ -240,24 +222,18 @@ export const PutMyInfo = async (req: Request, res: Response) => {
           .where('user.id =:id', { id: authResult.decode.userId })
           .execute();
 
-        res.status(200).json('비밀번호가 변경되었습니다');
+        res.sendStatus(200);
       }
     } catch (error) {
-      // user DB에 필수 입력 하지 않을 경우
-      // 예를 들어, user.name을 값을 입력하지 않을 경우,
-      // 클라이언트에서 넘어온 파라미터가 이상할 경우, 400 상태 코드
-      res.status(400).json('변경할 비밀번호를 입력해주세요');
+      res.status(500).json({ error: error.message });
     }
   } else {
-    // 토큰 인증 실패
     res.sendStatus(401);
   }
 };
 
 // PUT
 // /auth/mobile
-// jwt verify 필요 : Bearer Authorization
-// 인증 번호 성공 - 휴대폰 번호 변경
 export const PutMobile = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
@@ -273,12 +249,11 @@ export const PutMobile = async (req: Request, res: Response) => {
         .where('user.id =:id', { id: authResult.decode.userId })
         .execute();
 
-      res.status(200).json('휴대폰 번호가 변경되었습니다');
+      res.sendStatus(200);
     } catch (error) {
-      res.status(400).json('인증번호가 불일치합니다');
+      res.status(500).json({ error: error.message });
     }
   } else {
-    // 토큰 인증 실패
     res.sendStatus(401);
   }
 };
