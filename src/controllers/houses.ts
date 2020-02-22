@@ -460,11 +460,6 @@ export const GetHouse = async (req: Request, res: Response) => {
         .andWhere('favorite.houseId = :houseId', { houseId: id })
         .getOne();
 
-      if (!fav) {
-        res.status(404).json({ error: 'fav가 존재하지 않습니다.' });
-        return;
-      }
-
       const favsNow: boolean = fav ? true : false;
       avgRatingAddedHouses['favsNow'] = favsNow;
 

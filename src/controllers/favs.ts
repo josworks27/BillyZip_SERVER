@@ -74,9 +74,7 @@ export const GetFavs = async (req: Request, res: Response) => {
         .getMany();
 
       if (favs.length === 0) {
-        res
-          .status(404)
-          .json({ error: 'favs이 존재하지 않습니다.' });
+        res.status(404).json({ error: 'favs이 존재하지 않습니다.' });
         return;
       }
 
@@ -89,9 +87,7 @@ export const GetFavs = async (req: Request, res: Response) => {
           .getOne();
 
         if (!house) {
-          res
-            .status(404)
-            .json({ error: 'house가 존재하지 않습니다.' });
+          res.status(404).json({ error: 'house가 존재하지 않습니다.' });
           return;
         }
 
