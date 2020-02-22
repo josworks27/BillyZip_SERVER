@@ -4,6 +4,15 @@ node_modules/
 build/
 tmp/
 temp/
+
+# aws
 src/config/awsconfig.json
+
+# dotenv
 .env
+
+# TypeORM
 ormconfig_sample.json
+
+# bcrypt
+src/config/bcrypt.ts

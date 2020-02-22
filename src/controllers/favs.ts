@@ -14,35 +14,43 @@ export const PostFavs = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { houseId } = req.body;
 
-    // 중복이 있는지 체크
-    const result = await getRepository(Favorite)
-      .createQueryBuilder('favorite')
-      .where('favorite.houseId = :houseId', { houseId: houseId })
-      .andWhere('favorite.userId = :userId', {
-        userId: authResult.decode.userId,
-      })
-      .getOne();
+    try {
+      // 중복이 있는지 체크
+      const result = await getRepository(Favorite)
+        .createQueryBuilder('favorite')
+        .where('favorite.houseId = :houseId', { houseId: houseId })
+        .andWhere('favorite.userId = :userId', {
+          userId: authResult.decode.userId,
+        })
+        .getOne();
 
-    if (!result) {
-      // 중복 없으면 생성
-      // 해당 매물의 house 데이터를 가져온다.
-      const house = await House.findOne({ id: houseId });
-      // 해당 유저의 user 데이터를 가져온다.
-      const user = await User.findOne({ id: authResult.decode.userId });
+      if (!result) {
+        // 중복 없으면 생성
+        const house = await House.findOne({ id: houseId });
+        if (!house) {
+          res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+          return;
+        }
 
-      const newFav = new Favorite();
-      if (user !== undefined) {
+        const user = await User.findOne({ id: authResult.decode.userId });
+        if (!user) {
+          res.status(404).json({ error: 'user가 존재하지 않습니다.' });
+          return;
+        }
+
+        const newFav = new Favorite();
         newFav.user = user;
-      }
-      if (house !== undefined) {
         newFav.house = house;
-      }
-      newFav.isActive = true;
-      await newFav.save();
+        newFav.isActive = true;
+        await newFav.save();
 
-      res.status(200).json(newFav);
-    } else {
-      res.sendStatus(409);
+        res.status(200).json(newFav);
+      } else {
+        res.status(409).json({ error: '이미 찜한 매물입니다.' });
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);
@@ -55,28 +63,44 @@ export const GetFavs = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const favs: any = await getRepository(Favorite)
-      .createQueryBuilder('favorite')
-      .leftJoinAndSelect('favorite.user', 'user')
-      .leftJoinAndSelect('favorite.house', 'house')
-      .where('favorite.userId = :userId', { userId: authResult.decode.userId })
-      .getMany();
+    try {
+      const favs = await getRepository(Favorite)
+        .createQueryBuilder('favorite')
+        .leftJoinAndSelect('favorite.user', 'user')
+        .leftJoinAndSelect('favorite.house', 'house')
+        .where('favorite.userId = :userId', {
+          userId: authResult.decode.userId,
+        })
+        .getMany();
 
-    // 서브쿼리가 대신 image 조인한 house로 favs의 house 대체
-    for (let i = 0; i < favs.length; i++) {
-      const house: any = await getRepository(House)
-        .createQueryBuilder('house')
-        .leftJoinAndSelect('house.images', 'image')
-        .leftJoinAndSelect('house.reviews', 'review')
-        .where('house.id = :id', { id: favs[i].house.id })
-        .getOne();
+      if (favs.length === 0) {
+        res.status(404).json({ error: 'favs이 존재하지 않습니다.' });
+        return;
+      }
 
-      // avgRating 추가
-      const avgRatingAddedHouse = createAvgRatingHelper.single(house);
-      favs[i]['house'] = avgRatingAddedHouse;
+      for (let i = 0; i < favs.length; i++) {
+        const house = await getRepository(House)
+          .createQueryBuilder('house')
+          .leftJoinAndSelect('house.images', 'image')
+          .leftJoinAndSelect('house.reviews', 'review')
+          .where('house.id = :id', { id: favs[i].house.id })
+          .getOne();
+
+        if (!house) {
+          res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+          return;
+        }
+
+        // avgRating 추가
+        const avgRatingAddedHouse = createAvgRatingHelper.single(house);
+        favs[i]['house'] = avgRatingAddedHouse;
+      }
+
+      res.status(200).json(favs);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
-
-    res.status(200).json(favs);
   } else {
     res.sendStatus(401);
   }
@@ -89,20 +113,25 @@ export const DeleteFavs = async (req: Request, res: Response) => {
 
   if (authResult.decode) {
     const { id } = req.params;
-    const favResult = await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Favorite)
-      .where('favorite.houseId = :houseId', { houseId: id })
-      .andWhere('favorite.userId = :userId', {
-        userId: authResult.decode.userId,
-      })
-      .execute();
+    try {
+      const favResult = await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Favorite)
+        .where('favorite.houseId = :houseId', { houseId: id })
+        .andWhere('favorite.userId = :userId', {
+          userId: authResult.decode.userId,
+        })
+        .execute();
 
-    if (favResult.affected === 1) {
-      res.sendStatus(200);
-    } else {
-      res.sendStatus(404);
+      if (favResult.affected === 1) {
+        res.sendStatus(200);
+      } else {
+        res.status(404).json({ error: '해당하는 favs이 존재하지 않습니다.' });
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);

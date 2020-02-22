@@ -48,75 +48,79 @@ export const PostHouse = async (req: Request, res: Response) => {
       allowPet,
     } = req.body;
 
-    // ! JSON.parse는 테스트 환경의 문제. 클라이언트와 타입 확인해서 고칠 것!
-    const newAmenity = new Amenity();
-    newAmenity.secondFloor = JSON.parse(secondFloor);
-    newAmenity.parking = JSON.parse(parking);
-    newAmenity.aircon = JSON.parse(aircon);
-    newAmenity.autoLock = JSON.parse(autoLock);
-    newAmenity.tv = JSON.parse(tv);
-    newAmenity.bed = JSON.parse(bed);
-    newAmenity.washing = JSON.parse(washing);
-    newAmenity.allowPet = JSON.parse(allowPet);
-    newAmenity.isActive = true;
+    try {
+      // amenity 생성하기
+      const newAmenity = new Amenity();
+      newAmenity.secondFloor = JSON.parse(secondFloor);
+      newAmenity.parking = JSON.parse(parking);
+      newAmenity.aircon = JSON.parse(aircon);
+      newAmenity.autoLock = JSON.parse(autoLock);
+      newAmenity.tv = JSON.parse(tv);
+      newAmenity.bed = JSON.parse(bed);
+      newAmenity.washing = JSON.parse(washing);
+      newAmenity.allowPet = JSON.parse(allowPet);
+      newAmenity.isActive = true;
 
-    await newAmenity.save();
+      await newAmenity.save();
 
-    // ! 토큰에 있는 user id와 같은 유저를 찾는다.
-    const user = await User.findOne({ id: authResult.decode.userId });
-
-    if (user === undefined) {
-      res.sendStatus(400);
-      return;
-    }
-
-    // 요청받은 정보로 새로운 House 생성하기
-    const newHouse = new House();
-    newHouse.plan = plan;
-    newHouse.type = type;
-    newHouse.year = year;
-    newHouse.access = access;
-    newHouse.status = JSON.parse(status);
-    newHouse.display = JSON.parse(display);
-    newHouse.startTime = startTime;
-    newHouse.endTime = endTime;
-    newHouse.location = JSON.parse(location);
-    newHouse.adminDistrict = adminDistrict;
-    newHouse.title = title;
-    newHouse.description = description;
-    newHouse.houseRule = houseRule;
-    newHouse.isActive = true;
-    newHouse.amenity = newAmenity;
-    newHouse.user = user;
-
-    await newHouse.save();
-
-    // 반복문으로 여러장의 새로운 Image 생성하기
-    for (let i = 0; i < req.files.length; i++) {
-      const { originalname, location } = req.files[i];
-
-      const imageName = originalname.split('.');
-
-      if (imageName[0] === 'mainImg') {
-        const newImage = new Image();
-        newImage.filePath = location;
-        newImage.fileName = originalname;
-        newImage.house = newHouse;
-        newImage.mainImage = true;
-        newImage.isActive = true;
-        await newImage.save();
-      } else {
-        const newImage = new Image();
-        newImage.filePath = location;
-        newImage.fileName = originalname;
-        newImage.house = newHouse;
-        newImage.mainImage = false;
-        newImage.isActive = true;
-        await newImage.save();
+      // ! 토큰에 있는 user id와 같은 유저를 찾는다.
+      const user = await User.findOne({ id: authResult.decode.userId });
+      if (!user) {
+        res.status(404).json({ error: 'user가 존재하지 않습니다.' });
+        return;
       }
-    }
 
-    res.status(200).json({ houseId: newHouse.id });
+      // 요청받은 정보로 새로운 House 생성하기
+      const newHouse = new House();
+      newHouse.plan = plan;
+      newHouse.type = type;
+      newHouse.year = year;
+      newHouse.access = access;
+      newHouse.status = JSON.parse(status);
+      newHouse.display = JSON.parse(display);
+      newHouse.startTime = startTime;
+      newHouse.endTime = endTime;
+      newHouse.location = JSON.parse(location);
+      newHouse.adminDistrict = adminDistrict;
+      newHouse.title = title;
+      newHouse.description = description;
+      newHouse.houseRule = houseRule;
+      newHouse.isActive = true;
+      newHouse.amenity = newAmenity;
+      newHouse.user = user;
+      await newHouse.save();
+
+      // 반복문으로 여러장의 새로운 Image 생성하기
+      for (let i = 0; i < req.files.length; i++) {
+        const { originalname, location } = req.files[i];
+        const imageName = originalname.split('.');
+
+        if (imageName[0] === 'mainImg') {
+          // 메인이미지 일 때
+          const newImage = new Image();
+          newImage.filePath = location;
+          newImage.fileName = originalname;
+          newImage.house = newHouse;
+          newImage.mainImage = true;
+          newImage.isActive = true;
+          await newImage.save();
+        } else {
+          // 메인 이미지가 아닐 때
+          const newImage = new Image();
+          newImage.filePath = location;
+          newImage.fileName = originalname;
+          newImage.house = newHouse;
+          newImage.mainImage = false;
+          newImage.isActive = true;
+          await newImage.save();
+        }
+      }
+
+      res.status(200).json({ houseId: newHouse.id });
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -128,8 +132,19 @@ export const GetAllHouses = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const allHouses = await House.find();
-    res.status(200).json(allHouses);
+    try {
+      const allHouses = await House.find();
+
+      if (allHouses.length === 0) {
+        res.status(404).json({ error: 'allHouses가 존재하지 않습니다.' });
+        return;
+      } else {
+        res.status(200).json(allHouses);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -141,91 +156,115 @@ export const GetMainHouses = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const houses = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.reviews', 'review')
-      .getMany();
-
-    // * 각각의 매물의 리뷰 평균구하기
-    const avgRating: any = {};
-
-    for (let i = 0; i < houses.length; i++) {
-      let avgTemp = 0;
-
-      if (houses[i].reviews.length > 0) {
-        for (let j = 0; j < houses[i].reviews.length; j++) {
-          avgTemp += houses[i].reviews[j].rating;
-        }
-        avgRating[houses[i].id] = avgTemp / houses[i].reviews.length;
-      } else {
-        avgRating[houses[i].id] = 0;
-      }
-    }
-
-    console.log('avg ', avgRating);
-
-    // 객체 내림차순으로 정렬
-    // 정렬해서 4개만 필터링
-    const sortArr = [];
-    for (const prop in avgRating) {
-      sortArr.push([prop, avgRating[prop]]);
-    }
-    sortArr.sort((a: any, b: any) => {
-      return b[1] - a[1];
-    });
-
-    // 점수대별 랜덤매물
-    const overFourHouses = ratingRangeHelper.overFourHouses(sortArr);
-
-    const rankHouses: any = [];
-
-    if (overFourHouses.length > 3) {
-      // 매물이 4개 이상일 때
-      for (let i = 0; i < 4; i++) {
-        const rankResult: any = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.reviews', 'review')
-          .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: Number(overFourHouses[i][0]) })
-          .getOne();
-        rankResult.avgRating = overFourHouses[i][1];
-        rankHouses.push(rankResult);
-      }
-    } else {
-      // 매물이 4개 이하일 때
-      const overThreeHouses = ratingRangeHelper.overThreeUnderFourHouses(
-        sortArr,
-      );
-      const threeConcatFour = overFourHouses.concat(overThreeHouses);
-      console.log('콘캣 ? ', threeConcatFour);
-      for (let i = 0; i < 4; i++) {
-        const rankResult: any = await getRepository(House)
-          .createQueryBuilder('house')
-          .leftJoinAndSelect('house.reviews', 'review')
-          .leftJoinAndSelect('house.images', 'image')
-          .where('house.id = :id', { id: Number(threeConcatFour[i][0]) })
-          .getOne();
-        rankResult.avgRating = threeConcatFour[i][1];
-        rankHouses.push(rankResult);
-      }
-    }
-
-    // * 유형별 랜덤매물
-    const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
-    const randHouses = [];
-
-    for (let i = 0; i < houseType.length; i++) {
-      const result = await createQueryBuilder(House, 'house')
-        .leftJoinAndSelect('house.images', 'image')
-        .take(4)
-        .orderBy('RAND()')
-        .where('house.type = :type', { type: houseType[i] })
+    try {
+      const houses = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.reviews', 'review')
         .getMany();
 
-      randHouses.push(result);
-    }
+      if (houses.length === 0) {
+        res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+        return;
+      }
 
-    res.status(200).json({ rank: rankHouses, rand: randHouses });
+      // * 각각의 매물의 리뷰 평균구하기
+      const avgRating: any = {};
+
+      for (let i = 0; i < houses.length; i++) {
+        let avgTemp = 0;
+
+        if (houses[i].reviews.length > 0) {
+          for (let j = 0; j < houses[i].reviews.length; j++) {
+            avgTemp += houses[i].reviews[j].rating;
+          }
+          avgRating[houses[i].id] = avgTemp / houses[i].reviews.length;
+        } else {
+          avgRating[houses[i].id] = 0;
+        }
+      }
+
+      // 객체 내림차순으로 정렬
+      // 정렬해서 4개만 필터링
+      const sortArr = [];
+      for (const prop in avgRating) {
+        sortArr.push([prop, avgRating[prop]]);
+      }
+      sortArr.sort((a: any, b: any) => {
+        return b[1] - a[1];
+      });
+
+      // 점수대별 랜덤매물
+      const overFourHouses = ratingRangeHelper.overFourHouses(sortArr);
+      const rankHouses = [];
+
+      if (overFourHouses.length > 3) {
+        // 매물이 4개 이상일 때
+        for (let i = 0; i < 4; i++) {
+          const rankResult: any = await getRepository(House)
+            .createQueryBuilder('house')
+            .leftJoinAndSelect('house.reviews', 'review')
+            .leftJoinAndSelect('house.images', 'image')
+            .where('house.id = :id', { id: Number(overFourHouses[i][0]) })
+            .getOne();
+
+          if (!rankResult) {
+            res.status(404).json({ error: 'rankResult가 존재하지 않습니다.' });
+            return;
+          }
+
+          rankResult.avgRating = overFourHouses[i][1];
+          rankHouses.push(rankResult);
+        }
+      } else {
+        // 매물이 4개 이하일 때
+        const overThreeHouses = ratingRangeHelper.overThreeUnderFourHouses(
+          sortArr,
+        );
+        const threeConcatFour = overFourHouses.concat(overThreeHouses);
+
+        for (let i = 0; i < 4; i++) {
+          const rankResult: any = await getRepository(House)
+            .createQueryBuilder('house')
+            .leftJoinAndSelect('house.reviews', 'review')
+            .leftJoinAndSelect('house.images', 'image')
+            .where('house.id = :id', { id: Number(threeConcatFour[i][0]) })
+            .getOne();
+
+          if (!rankResult) {
+            res.status(404).json({ error: 'rankResult가 존재하지 않습니다.' });
+            return;
+          }
+
+          rankResult.avgRating = threeConcatFour[i][1];
+          rankHouses.push(rankResult);
+        }
+      }
+
+      // * 유형별 랜덤매물
+      const houseType = ['apart', 'dandok', 'officetel', 'villa', 'oneroom'];
+      const randHouses = [];
+
+      for (let i = 0; i < houseType.length; i++) {
+        const randResult = await createQueryBuilder(House, 'house')
+          .leftJoinAndSelect('house.images', 'image')
+          .take(4)
+          .orderBy('RAND()')
+          .where('house.type = :type', { type: houseType[i] })
+          .getMany();
+
+        if (randResult.length === 0) {
+          res.status(404).json({ error: 'result가 존재하지 않습니다.' });
+          return;
+        }
+
+        randHouses.push(randResult);
+      }
+
+      res.status(200).json({ rank: rankHouses, rand: randHouses });
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -237,7 +276,7 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const body = req.body;
+    const { body } = req;
     const convertedType = convertHouseProperties(
       body.plan,
       body.type,
@@ -245,27 +284,38 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
       body.access,
       body.adminDistrict,
     );
-
     const { plan, type, year, access, adminDistrict } = convertedType;
 
-    const houses: any = await getRepository(House).find({
-      relations: ['amenity', 'reviews', 'images'],
-      where: {
-        plan: plan ? plan : Not('null'),
-        type: type ? type : Not('null'),
-        year: year ? LessThanOrEqual(year) : Not('null'),
-        access: access ? LessThanOrEqual(access) : Not('null'),
-        adminDistrict: adminDistrict ? Like(`%${adminDistrict}%`) : Not('null'),
-      },
-      order: {
-        updatedAt: 'DESC',
-      },
-    });
+    try {
+      const houses = await getRepository(House).find({
+        relations: ['amenity', 'reviews', 'images'],
+        where: {
+          plan: plan ? plan : Not('null'),
+          type: type ? type : Not('null'),
+          year: year ? LessThanOrEqual(year) : Not('null'),
+          access: access ? LessThanOrEqual(access) : Not('null'),
+          adminDistrict: adminDistrict
+            ? Like(`%${adminDistrict}%`)
+            : Not('null'),
+        },
+        order: {
+          updatedAt: 'DESC',
+        },
+      });
 
-    // avgRating 추가하기
-    const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
+      if (!houses) {
+        res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+        return;
+      }
 
-    res.status(200).json(avgRatingAddedHouses);
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
+
+      res.status(200).json(avgRatingAddedHouses);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -280,34 +330,52 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
     if (req.body.searchWord) {
       const { searchWord } = req.body;
       const searchWordArray = searchWord.split(' ');
-      console.log(searchWordArray);
 
-      const convertedWords: string[] = searchWordArray.map((word: any) => {
+      const convertedWords: string[] = searchWordArray.map((word: string) => {
         return { title: Like(`%${word}%`) };
       });
 
-      const houses: any = await getRepository(House).find({
-        relations: ['amenity', 'reviews', 'images'],
-        where: convertedWords,
-        order: {
-          updatedAt: 'DESC',
-        },
-      });
+      try {
+        const houses = await getRepository(House).find({
+          relations: ['amenity', 'reviews', 'images'],
+          where: convertedWords,
+          order: {
+            updatedAt: 'DESC',
+          },
+        });
 
-      // avgRating 추가하기
-      const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
+        if (houses.length === 0) {
+          res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+          return;
+        }
+        // avgRating 추가하기
+        const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
 
-      res.status(200).json(avgRatingAddedHouses);
+        res.status(200).json(avgRatingAddedHouses);
+      } catch (err) {
+        console.error('error is ', err);
+        res.status(500).json({ error: err });
+      }
     } else {
-      const houses: any = await getRepository(House).find({
-        relations: ['amenity', 'reviews', 'images'],
-        where: [],
-        order: {
-          updatedAt: 'DESC',
-        },
-      });
+      try {
+        const houses = await getRepository(House).find({
+          relations: ['amenity', 'reviews', 'images'],
+          where: [],
+          order: {
+            updatedAt: 'DESC',
+          },
+        });
 
-      res.status(200).json(houses);
+        if (houses.length === 0) {
+          res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+          return;
+        }
+
+        res.status(200).json(houses);
+      } catch (err) {
+        console.error('error is ', err);
+        res.status(500).json({ error: err });
+      }
     }
   } else {
     res.sendStatus(401);
@@ -322,18 +390,28 @@ export const GetPartHouses = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { type } = req.params;
 
-    const typeHouses: any = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.images', 'image')
-      .leftJoinAndSelect('house.reviews', 'review')
-      .where('house.type = :type', { type: type })
-      .orderBy('house.updated_at', 'DESC')
-      .getMany();
+    try {
+      const typeHouses = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.images', 'image')
+        .leftJoinAndSelect('house.reviews', 'review')
+        .where('house.type = :type', { type: type })
+        .orderBy('house.updated_at', 'DESC')
+        .getMany();
 
-    // avgRating 추가하기
-    const avgRatingAddedHouses = createAvgRatingHelper.multiple(typeHouses);
+      if (typeHouses.length === 0) {
+        res.status(404).json({ error: 'typeHouses가 존재하지 않습니다.' });
+        return;
+      }
 
-    res.status(200).json(avgRatingAddedHouses);
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.multiple(typeHouses);
+
+      res.status(200).json(avgRatingAddedHouses);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -347,37 +425,49 @@ export const GetHouse = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { id } = req.params;
 
-    const house: any = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.images', 'image')
-      .leftJoinAndSelect('house.amenity', 'amenity')
-      .leftJoinAndSelect('house.user', 'user')
-      .where('house.id = :id', { id: id })
-      .getOne();
+    try {
+      const house = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.images', 'image')
+        .leftJoinAndSelect('house.amenity', 'amenity')
+        .leftJoinAndSelect('house.user', 'user')
+        .where('house.id = :id', { id: id })
+        .getOne();
 
-    // user 조인한 reviews 만들기
-    const reviews: any = await getRepository(Review)
-      .createQueryBuilder('review')
-      .leftJoinAndSelect('review.user', 'user')
-      .where('review.houseId = :houseId', { houseId: house.id })
-      .getMany();
+      if (!house) {
+        res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+        return;
+      }
 
-    house['reviews'] = reviews;
+      // user 조인한 reviews 만들기
+      const reviews = await getRepository(Review)
+        .createQueryBuilder('review')
+        .leftJoinAndSelect('review.user', 'user')
+        .where('review.houseId = :houseId', { houseId: house.id })
+        .getMany();
 
-    // avgRating 추가하기
-    const avgRatingAddedHouses = createAvgRatingHelper.single(house);
+      house['reviews'] = reviews;
 
-    // 이미 favs한 매물인지 확인하기 true, false
-    const fav: any = await getRepository(Favorite)
-      .createQueryBuilder('favorite')
-      .where('favorite.userId = :userId', { userId: authResult.decode.userId })
-      .andWhere('favorite.houseId = :houseId', { houseId: id })
-      .getOne();
+      // avgRating 추가하기
+      const avgRatingAddedHouses = createAvgRatingHelper.single(house);
 
-    const favsNow: boolean = fav ? true : false;
-    avgRatingAddedHouses['favsNow'] = favsNow;
+      // 이미 favs한 매물인지 확인하기 true, false
+      const fav = await getRepository(Favorite)
+        .createQueryBuilder('favorite')
+        .where('favorite.userId = :userId', {
+          userId: authResult.decode.userId,
+        })
+        .andWhere('favorite.houseId = :houseId', { houseId: id })
+        .getOne();
 
-    res.status(200).json(avgRatingAddedHouses);
+      const favsNow: boolean = fav ? true : false;
+      avgRatingAddedHouses['favsNow'] = favsNow;
+
+      res.status(200).json(avgRatingAddedHouses);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -414,65 +504,74 @@ export const PutHouse = async (req: Request, res: Response) => {
     } = req.body;
 
     const { id } = req.params;
+    // const images = req.files;
+    // console.log('images is ', images);
 
-    const images = req.files;
-    console.log('images is ', images);
+    try {
+      // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
+      const house = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.user', 'user')
+        .where('house.id = :id', { id: id })
+        .getOne();
 
-    // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
-    const house: any = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.user', 'user')
-      .where('house.id = :id', { id: id })
-      .getOne();
+      if (!house) {
+        res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+        return;
+      }
 
-    if (house.user.id === authResult.decode.userId) {
-      // 수정할 권한 있음
-      await getConnection()
-        .createQueryBuilder()
-        .update(House)
-        .set({
-          plan: plan,
-          type: type,
-          year: year,
-          access: access,
-          status: status,
-          display: display,
-          startTime: startTime,
-          endTime: endTime,
-          location: location,
-          adminDistrict: adminDistrict,
-          title: title,
-          description: description,
-          houseRule: houseRule,
-        })
-        .where('id = :id', { id: id })
-        .execute();
+      if (house.user.id === authResult.decode.userId) {
+        // 수정할 권한 있음
+        await getConnection()
+          .createQueryBuilder()
+          .update(House)
+          .set({
+            plan: plan,
+            type: type,
+            year: year,
+            access: access,
+            status: status,
+            display: display,
+            startTime: startTime,
+            endTime: endTime,
+            location: location,
+            adminDistrict: adminDistrict,
+            title: title,
+            description: description,
+            houseRule: houseRule,
+          })
+          .where('id = :id', { id: id })
+          .execute();
 
-      await getConnection()
-        .createQueryBuilder()
-        .update(Amenity)
-        .set({
-          secondFloor: secondFloor,
-          parking: parking,
-          aircon: aircon,
-          autoLock: autoLock,
-          tv: tv,
-          bed: bed,
-          washing: washing,
-          allowPet: allowPet,
-        })
-        .where('id = :id', { id: id })
-        .execute();
+        await getConnection()
+          .createQueryBuilder()
+          .update(Amenity)
+          .set({
+            secondFloor: secondFloor,
+            parking: parking,
+            aircon: aircon,
+            autoLock: autoLock,
+            tv: tv,
+            bed: bed,
+            washing: washing,
+            allowPet: allowPet,
+          })
+          .where('id = :id', { id: id })
+          .execute();
 
-      // ! 이미지 수정
-      // * image에서 houseId === id 전부 삭제
-      // * image에 새로운 이미지들로 다시 생성하기
-      // * image.house = id;
+        // ! 이미지 수정
+        // * image에서 houseId === id 전부 삭제
+        // * image에 새로운 이미지들로 다시 생성하기
+        // * image.house = id;
 
-      res.sendStatus(200);
-    } else {
-      // 수정할 권한 없음
-      res.sendStatus(401);
+        res.sendStatus(200);
+      } else {
+        // 수정할 권한 없음
+        res.sendStatus(401);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);
@@ -487,41 +586,51 @@ export const DeleteHouse = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { id } = req.params;
 
-    // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
-    const house: any = await getRepository(House)
-      .createQueryBuilder('house')
-      .leftJoinAndSelect('house.user', 'user')
-      .where('house.id = :id', { id: id })
-      .getOne();
+    try {
+      // 매물의 작성자를 확인하기 위해 매물의 정보를 가져온다.
+      const house = await getRepository(House)
+        .createQueryBuilder('house')
+        .leftJoinAndSelect('house.user', 'user')
+        .where('house.id = :id', { id: id })
+        .getOne();
 
-    if (house.user.id === authResult.decode.userId) {
-      // 매물 지우기
-      await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(House)
-        .where('id = :id', { id: id })
-        .execute();
+      if (!house) {
+        res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+        return;
+      }
 
-      // 어메너티 지우기
-      await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(Amenity)
-        .where('id = :id', { id: id })
-        .execute();
+      if (house.user.id === authResult.decode.userId) {
+        // 매물 지우기
+        await getConnection()
+          .createQueryBuilder()
+          .delete()
+          .from(House)
+          .where('id = :id', { id: id })
+          .execute();
 
-      // 리뷰도 지우기
-      await getConnection()
-        .createQueryBuilder()
-        .delete()
-        .from(Review)
-        .where('houseId = :houseId', { houseId: id })
-        .execute();
+        // 어메너티 지우기
+        await getConnection()
+          .createQueryBuilder()
+          .delete()
+          .from(Amenity)
+          .where('id = :id', { id: id })
+          .execute();
 
-      res.sendStatus(200);
-    } else {
-      res.sendStatus(401);
+        // 리뷰도 지우기
+        await getConnection()
+          .createQueryBuilder()
+          .delete()
+          .from(Review)
+          .where('houseId = :houseId', { houseId: id })
+          .execute();
+
+        res.sendStatus(200);
+      } else {
+        res.sendStatus(401);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);

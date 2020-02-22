@@ -4,17 +4,18 @@ import { House } from '../entities/House';
 import { getConnection, getRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
+import saltRounds from '../config/bcrypt';
 import * as bcrypt from 'bcrypt';
 import authHelper from '../util/authHelper';
 
-// POST
-// /users/signup
+// * POST
+// * /users/signup
 export const PostSignup = async (req: Request, res: Response) => {
-  try {
-    const { email, password, name, mobile, gender, birth } = req.body;
+  const { email, password, name, mobile, gender, birth } = req.body;
 
+  try {
     const userEmail = await User.findOne({ email: email });
-    const hashedPwd = await bcrypt.hash(password, 10);
+    const hashedPwd = await bcrypt.hash(password, saltRounds);
 
     if (userEmail) {
       // User DB에 email이 있는 경우
@@ -36,26 +37,26 @@ export const PostSignup = async (req: Request, res: Response) => {
       await user.save();
       res.status(200).json('회원가입이 완료되었습니다');
     }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };
 
-// POST
-// /users/signin
+// * POST
+// * /users/signin
 // 로그인 구현
 // 이메일이 일치하지 않는경우, undefind
 // 비밀번호가 일치하지 않는 경우, undefind
 // 이메일, 비밀번호가 일치하는 경우, 이메일과 비밀번호
 export const PostSignin = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
+  try {
     const userEmail: any = await User.findOne({ email: email });
 
     if (userEmail) {
       // 사용자 이메일이 존재할 때,
-
       const checkPwd = await bcrypt.compare(password, userEmail.password);
 
       if (checkPwd) {
@@ -83,8 +84,9 @@ export const PostSignin = async (req: Request, res: Response) => {
     } else {
       res.status(404).json('회원가입을 해주세요');
     }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };
 
@@ -124,8 +126,9 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 
         res.status(200).json(livingHouse);
       }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     // 토큰 인증 실패
@@ -148,9 +151,14 @@ export const GetList = async (req: Request, res: Response) => {
         .where('house.userId = :userId', { userId: authResult.decode.userId })
         .getMany();
 
-      res.status(200).json(houseList);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+      if (houseList.length === 0) {
+        res.status(404).json({ error: 'houseList가 존재하지 않습니다.' });
+      } else {
+        res.status(200).json(houseList);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);
@@ -177,12 +185,17 @@ export const GetMyInfo = async (req: Request, res: Response) => {
         .from(User, 'user')
         .where('user.id =:id', { id: authResult.decode.userId })
         .getOne();
-      res.status(200).json(myInfo);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+
+      if (!myInfo) {
+        res.status(404).json({ error: 'myInfo가 존재하지 않습니다.' });
+      } else {
+        res.status(200).json(myInfo);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
-    // 토큰 인증 실패
     res.sendStatus(401);
   }
 };
@@ -193,21 +206,21 @@ export const PutMyInfo = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    try {
-      const { name, gender, birth, password, email, mobile } = req.body;
+    const { name, gender, birth, password, email, mobile } = req.body;
 
-      if (
-        name === undefined ||
-        gender === undefined ||
-        gender === undefined ||
-        password === undefined ||
-        email === undefined ||
-        mobile === undefined
-      ) {
-        res.sendStatus(400);
-      } else {
-        const hashedPwd = bcrypt.hashSync(password, 10);
+    if (
+      name === undefined ||
+      gender === undefined ||
+      gender === undefined ||
+      password === undefined ||
+      email === undefined ||
+      mobile === undefined
+    ) {
+      res.sendStatus(400);
+    } else {
+      const hashedPwd = bcrypt.hashSync(password, saltRounds);
 
+      try {
         await getConnection()
           .createQueryBuilder()
           .update(User)
@@ -223,9 +236,10 @@ export const PutMyInfo = async (req: Request, res: Response) => {
           .execute();
 
         res.sendStatus(200);
+      } catch (err) {
+        console.error('error is ', err);
+        res.status(500).json({ error: err });
       }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
     }
   } else {
     res.sendStatus(401);
@@ -238,8 +252,9 @@ export const PutMobile = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
+    const { userPhoneNum } = req.body;
+
     try {
-      const { userPhoneNum } = req.body;
       await getConnection()
         .createQueryBuilder()
         .update(User)
@@ -250,8 +265,9 @@ export const PutMobile = async (req: Request, res: Response) => {
         .execute();
 
       res.sendStatus(200);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);

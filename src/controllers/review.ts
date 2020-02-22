@@ -12,42 +12,40 @@ export const postReview = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const { comment, rating } = req.body;
 
-    // 토큰 id로 user 찾기
-    let user;
-    if (typeof authResult.decode.userId === 'number') {
-      user = await User.findOne({ id: authResult.decode.userId });
+    try {
+      // 토큰 id로 user 찾기
+      const user = await User.findOne({ id: authResult.decode.userId });
+
+      if (!user) {
+        res.status(404).json({ error: 'user가 존재하지 않습니다.' });
+        return;
+      }
+
+      // params id로 house 찾기
+      const house = await House.findOne({ id: Number(id) });
+
+      if (!house) {
+        res.status(404).json({ error: 'house가 존재하지 않습니다.' });
+        return;
+      }
+
+      // new review 생성
+      const newReview = new Review();
+      newReview.comment = comment;
+      newReview.rating = rating;
+      newReview.isActive = true;
+      newReview.house = house;
+      newReview.user = user;
+      await newReview.save();
+
+      res.status(200).json(newReview);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
-
-    if (user === undefined) {
-      res.sendStatus(400);
-      return;
-    }
-
-    // params id로 house 찾기
-    let house;
-    if (typeof id === 'number') {
-      house = await House.findOne({ id: id });
-    }
-
-    if (house === undefined) {
-      res.sendStatus(400);
-      return;
-    }
-
-    // new review 생성
-    const newReview = new Review();
-    newReview.comment = comment;
-    newReview.rating = rating;
-    newReview.isActive = true;
-    newReview.house = house;
-    newReview.user = user;
-
-    await newReview.save();
-
-    res.status(200).json(newReview);
   } else {
     res.sendStatus(401);
   }
@@ -61,13 +59,19 @@ export const putReview = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { commentId, comment, rating } = req.body;
 
-    const putResult = await getConnection()
-      .createQueryBuilder()
-      .update(Review)
-      .set({ comment: comment, rating: rating })
-      .where('id = :id', { id: commentId })
-      .execute();
-    res.status(200).json(putResult);
+    try {
+      const putResult = await getConnection()
+        .createQueryBuilder()
+        .update(Review)
+        .set({ comment: comment, rating: rating })
+        .where('id = :id', { id: commentId })
+        .execute();
+
+      res.status(200).json(putResult);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -81,13 +85,21 @@ export const deleteReview = async (req: Request, res: Response) => {
   if (authResult.decode) {
     const { commentId } = req.body;
 
-    const deleteResult = await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Review)
-      .where('id = :id', { id: commentId })
-      .execute();
-    res.status(200).json(deleteResult);
+    if (!commentId) throw new Error('req.body에 문제가 있습니다.');
+
+    try {
+      const deleteResult = await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Review)
+        .where('id = :id', { id: commentId })
+        .execute();
+
+      res.status(200).json(deleteResult);
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }

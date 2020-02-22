@@ -14,30 +14,43 @@ export const PostApplication = async (req: Request, res: Response) => {
     // 토큰의 user id와 req.body로 매물 Id를 확인
     const { houseId } = req.body;
 
-    // 중복신청 확인
-    const checkApply = await getRepository(Application)
-      .createQueryBuilder('application')
-      .where('application.user = :user', { user: authResult.decode.userId })
-      .andWhere('application.house = :house', { house: houseId })
-      .getOne();
+    try {
+      // 중복신청 확인
+      const checkApply = await getRepository(Application)
+        .createQueryBuilder('application')
+        .where('application.user = :user', { user: authResult.decode.userId })
+        .andWhere('application.house = :house', { house: houseId })
+        .getOne();
 
-    // 중복되지 않을 떄 => 정상
-    if (!checkApply) {
-      // 신청자 정보 가져오기
-      const user: any = await User.findOne({ id: authResult.decode.userId });
-      // 매물 정보 가져오기
-      const house: any = await House.findOne({ id: houseId });
+      // 중복되지 않을 떄 => 정상
+      if (!checkApply) {
+        // 신청자 정보 가져오기
+        const user = await User.findOne({ id: authResult.decode.userId });
+        if (!user) {
+          res.status(404).json({ error: '유저정보가 존재하지 않습니다.' });
+          return;
+        }
 
-      const apply = await new Application();
-      apply.house = house;
-      apply.user = user;
-      apply.isActive = true;
-      apply.save();
+        // 매물 정보 가져오기
+        const house = await House.findOne({ id: houseId });
+        if (!house) {
+          res.status(404).json({ error: '매물정보가 존재하지 않습니다.' });
+          return;
+        }
 
-      res.sendStatus(200);
-    } else {
-      // 중복될 때
-      res.sendStatus(400);
+        const apply = new Application();
+        apply.house = house;
+        apply.user = user;
+        apply.isActive = true;
+        apply.save();
+
+        res.sendStatus(200);
+      } else {
+        res.status(400).json({ error: '중복된 신청입니다.' });
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);
@@ -50,14 +63,23 @@ export const GetApplication = async (req: Request, res: Response) => {
   const authResult = authHelper(req.headers.authorization);
 
   if (authResult.decode) {
-    const apply = await getRepository(Application)
-      .createQueryBuilder('application')
-      .leftJoinAndSelect('application.house', 'house')
-      .leftJoinAndSelect('application.user', 'user')
-      .where('house.userId = :userId', { userId: authResult.decode.userId })
-      .getMany();
+    try {
+      const apply = await getRepository(Application)
+        .createQueryBuilder('application')
+        .leftJoinAndSelect('application.house', 'house')
+        .leftJoinAndSelect('application.user', 'user')
+        .where('house.userId = :userId', { userId: authResult.decode.userId })
+        .getMany();
 
-    res.status(200).json(apply);
+      if (apply.length === 0) {
+        res.status(404).json({ error: '신청이 존재하지 않습니다.' });
+      } else {
+        res.status(200).json(apply);
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
+    }
   } else {
     res.sendStatus(401);
   }
@@ -72,18 +94,23 @@ export const DeleteApplication = async (req: Request, res: Response) => {
     const { userId, houseId } = req.body;
     // 자신의 매물id와 신청자의 id의 데이터를 삭제
 
-    const apply = await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Application)
-      .where('application.userId = :userId', { userId: userId })
-      .andWhere('application.houseId = :houseId', { houseId: houseId })
-      .execute();
+    try {
+      const apply = await getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(Application)
+        .where('application.userId = :userId', { userId: userId })
+        .andWhere('application.houseId = :houseId', { houseId: houseId })
+        .execute();
 
-    if (apply.affected === 1) {
-      res.sendStatus(200);
-    } else if (apply.affected === 0) {
-      res.sendStatus(404);
+      if (apply.affected === 1) {
+        res.sendStatus(200);
+      } else if (apply.affected === 0) {
+        res.status(404).json({ error: '해당하는 신청이 존재하지 않습니다.' });
+      }
+    } catch (err) {
+      console.error('error is ', err);
+      res.status(500).json({ error: err });
     }
   } else {
     res.sendStatus(401);
