@@ -4,20 +4,20 @@ import { User } from '../entities/User';
 import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
 import createAvgRatingHelper from '../util/avgRatingHelper';
-import { decodeHelper } from '../util/decodeHelper';
 
 // * POST
 // * /favs
 export const PostFavs = async (req: Request, res: Response) => {
   const { houseId } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     const result = await getRepository(Favorite)
       .createQueryBuilder('favorite')
       .where('favorite.houseId = :houseId', { houseId: houseId })
       .andWhere('favorite.userId = :userId', {
-        userId: decode.userId,
+        userId:  userId,
       })
       .getOne();
 
@@ -29,7 +29,7 @@ export const PostFavs = async (req: Request, res: Response) => {
         return;
       }
 
-      const user = await User.findOne({ id: decode.userId });
+      const user = await User.findOne({ id:  userId });
       if (!user) {
         res.status(404).json({ error: 'user가 존재하지 않습니다.' });
         return;
@@ -54,14 +54,16 @@ export const PostFavs = async (req: Request, res: Response) => {
 // * GET
 // * /favs
 export const GetFavs = async (req: Request, res: Response) => {
+  const userId = Number(req.headers['x-userid-header']);
+
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     const favs = await getRepository(Favorite)
       .createQueryBuilder('favorite')
       .leftJoinAndSelect('favorite.user', 'user')
       .leftJoinAndSelect('favorite.house', 'house')
       .where('favorite.userId = :userId', {
-        userId: decode.userId,
+        userId:  userId,
       })
       .getMany();
 
@@ -99,16 +101,17 @@ export const GetFavs = async (req: Request, res: Response) => {
 // * /favs/:id
 export const DeleteFavs = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     const favResult = await getConnection()
       .createQueryBuilder()
       .delete()
       .from(Favorite)
       .where('favorite.houseId = :houseId', { houseId: id })
       .andWhere('favorite.userId = :userId', {
-        userId: decode.userId,
+        userId:  userId,
       })
       .execute();
 

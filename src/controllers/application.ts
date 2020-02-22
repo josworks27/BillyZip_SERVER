@@ -3,25 +3,25 @@ import { User } from '../entities/User';
 import { House } from '../entities/House';
 import { Application } from '../entities/Application';
 import { getRepository, getConnection } from 'typeorm';
-import { decodeHelper } from '../util/decodeHelper';
+import { Image } from '../entities/Image';
 
 // * POST
 // * /application
 export const PostApplication = async (req: Request, res: Response) => {
   const { houseId } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     const checkApply = await getRepository(Application)
       .createQueryBuilder('application')
-      .where('application.user = :user', { user: decode.userId })
+      .where('application.user = :user', { user: userId })
       .andWhere('application.house = :house', { house: houseId })
       .getOne();
 
     // 중복되지 않을 떄 => 정상
     if (!checkApply) {
       // 신청자 정보 가져오기
-      const user = await User.findOne({ id: decode.userId });
+      const user = await User.findOne({ id: userId });
       if (!user) {
         res.status(404).json({ error: '유저정보가 존재하지 않습니다.' });
         return;
@@ -53,19 +53,32 @@ export const PostApplication = async (req: Request, res: Response) => {
 // * GET
 // * /application
 export const GetApplication = async (req: Request, res: Response) => {
+  const userId = Number(req.headers['x-userid-header']);
+
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     const apply = await getRepository(Application)
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.house', 'house')
       .leftJoinAndSelect('application.user', 'user')
-      .where('house.userId = :userId', { userId: decode.userId })
+      .where('house.userId = :userId', { userId: userId })
       .getMany();
+
+    // image 추가하기
+    const images = [];
+    for (let i = 0; i < apply.length; i++) {
+      const image = await getRepository(Image)
+        .createQueryBuilder('image')
+        .leftJoinAndSelect('image.house', 'house')
+        .where('image.houseId = :houseId', { houseId: apply[i].house.id })
+        .getMany();
+
+      images.push(image);
+    }
 
     if (apply.length === 0) {
       res.status(404).json({ error: '신청이 존재하지 않습니다.' });
     } else {
-      res.status(200).json(apply);
+      res.status(200).json({ apply: apply, images: images });
     }
   } catch (err) {
     console.error('error is ', err);

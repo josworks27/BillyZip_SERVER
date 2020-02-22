@@ -4,7 +4,7 @@ const convertHouseProperty = (
   year: string | number | null,
   access: string | number | null,
   adminDistrict: string | null,
-): any => {
+) => {
   if (plan === '전체') {
     plan = null;
   }

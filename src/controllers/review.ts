@@ -3,7 +3,6 @@ import { Review } from '../entities/Review';
 import { User } from '../entities/User';
 import { House } from '../entities/House';
 import { getConnection } from 'typeorm';
-import { decodeHelper } from '../util/decodeHelper';
 
 // ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
 // * POST
@@ -11,11 +10,12 @@ import { decodeHelper } from '../util/decodeHelper';
 export const postReview = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { comment, rating } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     // 토큰 id로 user 찾기
-    const user = await User.findOne({ id: decode.userId });
+    const user = await User.findOne({ id:  userId });
 
     if (!user) {
       res.status(404).json({ error: 'user가 존재하지 않습니다.' });

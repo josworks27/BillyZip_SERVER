@@ -50,7 +50,7 @@ housesRouter.post('/filter', authChecker, housesController.PostFilterHouse);
 housesRouter.post('/search', authChecker, housesController.PostSearchHouse);
 housesRouter.get('/part/:type', authChecker, housesController.GetPartHouses);
 housesRouter.get('/:id', authChecker, housesController.GetHouse);
-housesRouter.put('/:id', authChecker, housesController.PutHouse);
+housesRouter.put('/:id', upload.array('images', 7), authChecker, housesController.PutHouse);
 housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController

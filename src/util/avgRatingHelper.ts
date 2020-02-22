@@ -1,7 +1,9 @@
+import { House } from '../entities/House';
+
 // house에 있는 review들의 평균 rating을 계산하고 house에 추가하여 리턴하는 함수
 const createAvgRatingHelper = {
   // 하나의 house용
-  single: (house: any) => {
+  single: (house: House) => {
     let avgRating = 0;
     if (house !== undefined && house.reviews.length > 0) {
       for (let i = 0; i < house.reviews.length; i++) {
@@ -17,7 +19,7 @@ const createAvgRatingHelper = {
   },
 
   // 다수의 house용
-  multiple: (houses: any) => {
+  multiple: (houses: House[]) => {
     let avgRating = 0;
     for (let i = 0; i < houses.length; i++) {
       if (houses[i].reviews.length > 0) {

@@ -6,7 +6,6 @@ import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import saltRounds from '../config/bcrypt';
 import * as bcrypt from 'bcrypt';
-import { decodeHelper } from '../util/decodeHelper';
 
 // * POST
 // * /users/signup
@@ -99,13 +98,14 @@ export const GetSignout = (req: Request, res: Response) => {
 // GET
 // /users/current-info
 export const GetCurrentInfo = async (req: Request, res: Response) => {
+  const userId = Number(req.headers['x-userid-header']);
+
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     const userInfo = await getConnection()
       .createQueryBuilder()
       .select(['user.livingHouse'])
       .from(User, 'user')
-      .where('user.id =:id', { id: decode.userId })
+      .where('user.id =:id', { id: userId })
       .getMany();
 
     if (userInfo.length === 0) {
@@ -134,13 +134,14 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
 export const GetList = async (req: Request, res: Response) => {
+  const userId = Number(req.headers['x-userid-header']);
+
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     const houseList = await getRepository(House)
       .createQueryBuilder('house')
       .leftJoinAndSelect('house.user', 'user')
       .leftJoinAndSelect('house.images', 'image')
-      .where('house.userId = :userId', { userId: decode.userId })
+      .where('house.userId = :userId', { userId: userId })
       .getMany();
 
     if (houseList.length === 0) {
@@ -157,8 +158,9 @@ export const GetList = async (req: Request, res: Response) => {
 // GET
 // /users/my-info
 export const GetMyInfo = async (req: Request, res: Response) => {
+  const userId = Number(req.headers['x-userid-header']);
+
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     const myInfo = await getConnection()
       .createQueryBuilder()
       .select([
@@ -170,7 +172,7 @@ export const GetMyInfo = async (req: Request, res: Response) => {
         'user.password',
       ])
       .from(User, 'user')
-      .where('user.id =:id', { id: decode.userId })
+      .where('user.id =:id', { id: userId })
       .getOne();
 
     if (!myInfo) {
@@ -188,6 +190,7 @@ export const GetMyInfo = async (req: Request, res: Response) => {
 // /users/my-info
 export const PutMyInfo = async (req: Request, res: Response) => {
   const { name, gender, birth, password, email, mobile } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   if (
     name === undefined ||
@@ -202,7 +205,6 @@ export const PutMyInfo = async (req: Request, res: Response) => {
     const hashedPwd = bcrypt.hashSync(password, saltRounds);
 
     try {
-      const decode = await decodeHelper(req.headers.authorization);
       await getConnection()
         .createQueryBuilder()
         .update(User)
@@ -214,7 +216,7 @@ export const PutMyInfo = async (req: Request, res: Response) => {
           email: email,
           mobile: mobile,
         })
-        .where('user.id =:id', { id: decode.userId })
+        .where('user.id =:id', { id: userId })
         .execute();
 
       res.sendStatus(200);
@@ -229,16 +231,16 @@ export const PutMyInfo = async (req: Request, res: Response) => {
 // /auth/mobile
 export const PutMobile = async (req: Request, res: Response) => {
   const { userPhoneNum } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
     await getConnection()
       .createQueryBuilder()
       .update(User)
       .set({
         mobile: userPhoneNum,
       })
-      .where('user.id =:id', { id: decode.userId })
+      .where('user.id =:id', { id: userId })
       .execute();
 
     res.sendStatus(200);
