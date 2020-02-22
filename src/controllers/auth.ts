@@ -9,7 +9,8 @@ let tempAuthObj: any;
 // * /auth
 export const postAuth = async (req: Request, res: Response) => {
   const { userPhoneNum } = req.body;
-  
+
+  try {
     tempAuthObj = await twilioHelper.auth(userPhoneNum);
 
     if (tempAuthObj instanceof Error) {
@@ -17,6 +18,10 @@ export const postAuth = async (req: Request, res: Response) => {
     } else {
       res.sendStatus(200);
     }
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
+  }
 };
 
 // * POST

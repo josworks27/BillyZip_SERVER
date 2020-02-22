@@ -5,6 +5,7 @@ import * as multer from 'multer';
 import * as multerS3 from 'multer-s3';
 import * as path from 'path';
 import * as AWS from 'aws-sdk';
+import { authChecker } from '../middlewares/authChecker';
 
 export const housesRouter = Router();
 
@@ -42,18 +43,18 @@ const upload = multer({
 // });
 
 // housesController
-housesRouter.post('/', upload.array('images', 7), housesController.PostHouse);
-housesRouter.get('/', housesController.GetMainHouses);
-housesRouter.get('/all', housesController.GetAllHouses);
-housesRouter.post('/filter', housesController.PostFilterHouse);
-housesRouter.post('/search', housesController.PostSearchHouse);
-housesRouter.get('/part/:type', housesController.GetPartHouses);
-housesRouter.get('/:id', housesController.GetHouse);
-housesRouter.put('/:id', housesController.PutHouse);
-housesRouter.delete('/:id', housesController.DeleteHouse);
+housesRouter.post('/', upload.array('images', 7), authChecker, housesController.PostHouse);
+housesRouter.get('/', authChecker, housesController.GetMainHouses);
+housesRouter.get('/all', authChecker, housesController.GetAllHouses);
+housesRouter.post('/filter', authChecker, housesController.PostFilterHouse);
+housesRouter.post('/search', authChecker, housesController.PostSearchHouse);
+housesRouter.get('/part/:type', authChecker, housesController.GetPartHouses);
+housesRouter.get('/:id', authChecker, housesController.GetHouse);
+housesRouter.put('/:id', authChecker, housesController.PutHouse);
+housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController
 // ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
-housesRouter.post('/:id/comment', reviewController.postReview);
-housesRouter.put('/:id/comment', reviewController.putReview);
-housesRouter.delete('/:id/comment', reviewController.deleteReview);
+housesRouter.post('/:id/comment', authChecker, reviewController.postReview);
+housesRouter.put('/:id/comment', authChecker, reviewController.putReview);
+housesRouter.delete('/:id/comment', authChecker, reviewController.deleteReview);

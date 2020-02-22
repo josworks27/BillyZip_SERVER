@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as paymentController from '../controllers/payment';
+import { authChecker } from '../middlewares/authChecker';
 export const paymentRouter = Router();
 
-paymentRouter.post('/', paymentController.PostPayment);
-paymentRouter.get('/', paymentController.GetPayment);
+paymentRouter.post('/', authChecker, paymentController.PostPayment);
+paymentRouter.get('/', authChecker, paymentController.GetPayment);
