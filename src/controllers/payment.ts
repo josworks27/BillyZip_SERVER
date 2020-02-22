@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { getConnection, getRepository } from 'typeorm';
 import { Payment } from '../entities/Payment';
-import { decodeHelper } from '../util/decodeHelper';
 import twilioHelper from '../util/twilioHelper';
 
 // * POST
@@ -12,20 +11,21 @@ export const PostPayment = async (req: Request, res: Response) => {
   // 필요한 정보: userId(with TOKEN) / subscribePlan / paymentDate / paymentOption
 
   const { subscribePlan, paymentDate, paymentOption } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     // ! 디비: user에 currentPlan 업데이트 하기 / payment에 위 정보 생성하기
     // currentPlan 업데이트 하기
     await getConnection()
       .createQueryBuilder()
       .update(User)
       .set({ currentPlan: subscribePlan })
-      .where('id = :id', { id: decode.userId })
+      .where('id = :id', { id:  userId })
       .execute();
 
     // payment에 위 정보 생성하기
-    const currentUser = await User.findOne({ id: decode.userId });
+    const currentUser = await User.findOne({ id:  userId });
 
     if (!currentUser) {
       res.status(404).json({ error: 'currentUser가 존재하지 않습니다.' });
@@ -56,14 +56,14 @@ export const PostPayment = async (req: Request, res: Response) => {
 // * GET
 // * /payment
 export const GetPayment = async (req: Request, res: Response) => {
-  // 토큰으로 userId 확인해서 payment에서 해당 유저의 결제기록 응답하기
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
-    const decode = await decodeHelper(req.headers.authorization);
+     
     const payments = await getRepository(Payment)
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.user', 'user')
-      .where('payment.userId = :userId', { userId: decode.userId })
+      .where('payment.userId = :userId', { userId:  userId })
       .orderBy('payment.created_at', 'DESC')
       .getMany();
 

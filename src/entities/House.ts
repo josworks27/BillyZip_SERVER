@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   BaseEntity,
   Entity,
@@ -114,4 +116,6 @@ export class House extends BaseEntity {
     { nullable: false, onDelete: 'CASCADE' },
   )
   user!: User;
+  avgRating!: number;
+  favsNow!: boolean;
 }

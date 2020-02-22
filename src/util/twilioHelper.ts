@@ -8,7 +8,7 @@ const client = twilio(accountSid, authToken);
 const tempAuthObj: { [index: string]: number } = {};
 
 const twilioHelper = {
-  auth: async (userPhoneNum: any) => {
+  auth: async (userPhoneNum: string) => {
     const authNumber = Math.floor(Math.random() * 10000);
 
     try {
@@ -28,7 +28,7 @@ const twilioHelper = {
     return tempAuthObj;
   },
 
-  paymentMsg: async (userName: any, userPhoneNum: any) => {
+  paymentMsg: async (userName: string, userPhoneNum: string) => {
     try {
       if (!userName) throw new Error('잘못된 유저 이름입니다.');
       if (!userPhoneNum) throw new Error('잘못된 휴대폰 번호 입니다.');

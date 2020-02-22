@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import app from './index';
 
 // ! Create Socket IO module
@@ -14,7 +15,7 @@ io.on('connection', (socket: any) => {
   });
 
   // 1:1 룸으로 메세지 보내기
-  socket.on('chat', (userId: string, msg: any, name: string) => {
+  socket.on('chat', (userId: string, msg: string | number, name: string) => {
     console.log(name + '이(가) 접속하였습니다.');
     io.to(userId).emit('chat', `<Button title='${name}'/> ${msg}`);
   });
