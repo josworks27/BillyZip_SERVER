@@ -227,6 +227,31 @@ export const PutMyInfo = async (req: Request, res: Response) => {
   }
 };
 
+// DELETE
+// users/my-info
+
+export const DeleteMyInfo = async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.headers['x-userid-header']);
+
+    const deletedMyInfo = await getConnection()
+      .createQueryBuilder()
+      .delete()
+      .from(User)
+      .where('user.id = :id', { id: userId })
+      .execute();
+
+    if (deletedMyInfo.affected === 1) {
+      res.sendStatus(200);
+    } else if (deletedMyInfo.affected === 0) {
+      res.status(404).json({ error: '해당하는 유저가 존재하지 않습니다.' });
+    }
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
+  }
+};
+
 // PUT
 // /auth/mobile
 export const PutMobile = async (req: Request, res: Response) => {
