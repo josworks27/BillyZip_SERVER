@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import * as favsController from '../controllers/favs';
+import { authChecker } from '../middlewares/authChecker';
 export const favsRouter = Router();
 
-favsRouter.post('/', favsController.PostFavs);
-favsRouter.get('/', favsController.GetFavs);
-favsRouter.delete('/:id', favsController.DeleteFavs);
+favsRouter.post('/', authChecker, favsController.PostFavs);
+favsRouter.get('/', authChecker, favsController.GetFavs);
+favsRouter.delete('/:id', authChecker, favsController.DeleteFavs);

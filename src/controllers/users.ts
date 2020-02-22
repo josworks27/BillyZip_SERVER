@@ -6,7 +6,7 @@ import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import saltRounds from '../config/bcrypt';
 import * as bcrypt from 'bcrypt';
-import authHelper from '../util/authHelper';
+import { decodeHelper } from '../util/decodeHelper';
 
 // * POST
 // * /users/signup
@@ -53,7 +53,7 @@ export const PostSignin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const userEmail: any = await User.findOne({ email: email });
+    const userEmail = await User.findOne({ email: email });
 
     if (userEmail) {
       // 사용자 이메일이 존재할 때,
@@ -99,40 +99,34 @@ export const GetSignout = (req: Request, res: Response) => {
 // GET
 // /users/current-info
 export const GetCurrentInfo = async (req: Request, res: Response) => {
-  const authResult = authHelper(req.headers.authorization);
+  try {
+    const decode = await decodeHelper(req.headers.authorization);
+    const userInfo = await getConnection()
+      .createQueryBuilder()
+      .select(['user.livingHouse'])
+      .from(User, 'user')
+      .where('user.id =:id', { id: decode.userId })
+      .getMany();
 
-  if (authResult.decode) {
-    try {
-      const userInfo = await getConnection()
+    if (userInfo.length === 0) {
+      // 데이터가 없는 것이 정상일 수 있는 상황
+      // 204 : No contents
+
+      res.status(204).json(userInfo);
+    } else {
+      // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
+      const livingHouse = await getConnection()
         .createQueryBuilder()
-        .select(['user.livingHouse'])
-        .from(User, 'user')
-        .where('user.id =:id', { id: authResult.decode.userId })
+        .select(['house'])
+        .from(House, 'house')
+        .where('house.id =:id', { id: userInfo[0].livingHouse })
         .getMany();
 
-      if (userInfo.length === 0) {
-        // 데이터가 없는 것이 정상일 수 있는 상황
-        // 204 : No contents
-
-        res.status(204).json(userInfo);
-      } else {
-        // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
-        const livingHouse = await getConnection()
-          .createQueryBuilder()
-          .select(['house'])
-          .from(House, 'house')
-          .where('house.id =:id', { id: userInfo[0].livingHouse })
-          .getMany();
-
-        res.status(200).json(livingHouse);
-      }
-    } catch (err) {
-      console.error('error is ', err);
-      res.status(500).json({ error: err });
+      res.status(200).json(livingHouse);
     }
-  } else {
-    // 토큰 인증 실패
-    res.sendStatus(401);
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };
 // GET
@@ -140,128 +134,87 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
 // house의 userId : 매물 등록 작성자의 고유한 아이디
 // 매물리스트 가져오기 위해서 houseId === id
 export const GetList = async (req: Request, res: Response) => {
-  const authResult = authHelper(req.headers.authorization);
+  try {
+    const decode = await decodeHelper(req.headers.authorization);
+    const houseList = await getRepository(House)
+      .createQueryBuilder('house')
+      .leftJoinAndSelect('house.user', 'user')
+      .leftJoinAndSelect('house.images', 'image')
+      .where('house.userId = :userId', { userId: decode.userId })
+      .getMany();
 
-  if (authResult.decode) {
-    try {
-      const houseList = await getRepository(House)
-        .createQueryBuilder('house')
-        .leftJoinAndSelect('house.user', 'user')
-        .leftJoinAndSelect('house.images', 'image')
-        .where('house.userId = :userId', { userId: authResult.decode.userId })
-        .getMany();
-
-      if (houseList.length === 0) {
-        res.status(404).json({ error: 'houseList가 존재하지 않습니다.' });
-      } else {
-        res.status(200).json(houseList);
-      }
-    } catch (err) {
-      console.error('error is ', err);
-      res.status(500).json({ error: err });
+    if (houseList.length === 0) {
+      res.status(404).json({ error: 'houseList가 존재하지 않습니다.' });
+    } else {
+      res.status(200).json(houseList);
     }
-  } else {
-    res.sendStatus(401);
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };
 
 // GET
 // /users/my-info
 export const GetMyInfo = async (req: Request, res: Response) => {
-  const authResult = authHelper(req.headers.authorization);
+  try {
+    const decode = await decodeHelper(req.headers.authorization);
+    const myInfo = await getConnection()
+      .createQueryBuilder()
+      .select([
+        'user.name',
+        'user.gender',
+        'user.birth',
+        'user.email',
+        'user.mobile',
+        'user.password',
+      ])
+      .from(User, 'user')
+      .where('user.id =:id', { id: decode.userId })
+      .getOne();
 
-  if (authResult.decode) {
-    try {
-      const myInfo = await getConnection()
-        .createQueryBuilder()
-        .select([
-          'user.name',
-          'user.gender',
-          'user.birth',
-          'user.email',
-          'user.mobile',
-          'user.password',
-        ])
-        .from(User, 'user')
-        .where('user.id =:id', { id: authResult.decode.userId })
-        .getOne();
-
-      if (!myInfo) {
-        res.status(404).json({ error: 'myInfo가 존재하지 않습니다.' });
-      } else {
-        res.status(200).json(myInfo);
-      }
-    } catch (err) {
-      console.error('error is ', err);
-      res.status(500).json({ error: err });
+    if (!myInfo) {
+      res.status(404).json({ error: 'myInfo가 존재하지 않습니다.' });
+    } else {
+      res.status(200).json(myInfo);
     }
-  } else {
-    res.sendStatus(401);
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };
 
 // PUT
 // /users/my-info
 export const PutMyInfo = async (req: Request, res: Response) => {
-  const authResult = authHelper(req.headers.authorization);
+  const { name, gender, birth, password, email, mobile } = req.body;
 
-  if (authResult.decode) {
-    const { name, gender, birth, password, email, mobile } = req.body;
-
-    if (
-      name === undefined ||
-      gender === undefined ||
-      gender === undefined ||
-      password === undefined ||
-      email === undefined ||
-      mobile === undefined
-    ) {
-      res.sendStatus(400);
-    } else {
-      const hashedPwd = bcrypt.hashSync(password, saltRounds);
-
-      try {
-        await getConnection()
-          .createQueryBuilder()
-          .update(User)
-          .set({
-            name: name,
-            gender: gender,
-            birth: birth,
-            password: hashedPwd,
-            email: email,
-            mobile: mobile,
-          })
-          .where('user.id =:id', { id: authResult.decode.userId })
-          .execute();
-
-        res.sendStatus(200);
-      } catch (err) {
-        console.error('error is ', err);
-        res.status(500).json({ error: err });
-      }
-    }
+  if (
+    name === undefined ||
+    gender === undefined ||
+    gender === undefined ||
+    password === undefined ||
+    email === undefined ||
+    mobile === undefined
+  ) {
+    res.sendStatus(400);
   } else {
-    res.sendStatus(401);
-  }
-};
-
-// PUT
-// /auth/mobile
-export const PutMobile = async (req: Request, res: Response) => {
-  const authResult = authHelper(req.headers.authorization);
-
-  if (authResult.decode) {
-    const { userPhoneNum } = req.body;
+    const hashedPwd = bcrypt.hashSync(password, saltRounds);
 
     try {
+      const decode = await decodeHelper(req.headers.authorization);
       await getConnection()
         .createQueryBuilder()
         .update(User)
         .set({
-          mobile: userPhoneNum,
+          name: name,
+          gender: gender,
+          birth: birth,
+          password: hashedPwd,
+          email: email,
+          mobile: mobile,
         })
-        .where('user.id =:id', { id: authResult.decode.userId })
+        .where('user.id =:id', { id: decode.userId })
         .execute();
 
       res.sendStatus(200);
@@ -269,7 +222,28 @@ export const PutMobile = async (req: Request, res: Response) => {
       console.error('error is ', err);
       res.status(500).json({ error: err });
     }
-  } else {
-    res.sendStatus(401);
+  }
+};
+
+// PUT
+// /auth/mobile
+export const PutMobile = async (req: Request, res: Response) => {
+  const { userPhoneNum } = req.body;
+
+  try {
+    const decode = await decodeHelper(req.headers.authorization);
+    await getConnection()
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        mobile: userPhoneNum,
+      })
+      .where('user.id =:id', { id: decode.userId })
+      .execute();
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
   }
 };

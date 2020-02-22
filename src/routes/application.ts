@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import { authChecker } from '../middlewares/authChecker';
 import * as applicationController from '../controllers/application';
 export const applicationRouter = Router();
 
-applicationRouter.post('/', applicationController.PostApplication);
-applicationRouter.get('/', applicationController.GetApplication);
-applicationRouter.delete('/', applicationController.DeleteApplication);
+applicationRouter.post('/', authChecker, applicationController.PostApplication);
+applicationRouter.get('/', authChecker, applicationController.GetApplication);
+applicationRouter.delete('/', authChecker, applicationController.DeleteApplication);
