@@ -34,9 +34,19 @@ export const PostApplication = async (req: Request, res: Response) => {
         return;
       }
 
+      // 신청자의 currentPlan과 일치하는 매물인지 체크
+      if (user.currentPlan !== house.plan) {
+        res
+          .status(403)
+          .json({ error: '신청자의 구독플랜과 일치하지 않는 매물입니다.' });
+        return;
+      }
+
       const apply = new Application();
       apply.house = house;
       apply.user = user;
+      apply.completed = false;
+      apply.status = 'wait';
       apply.isActive = true;
       apply.save();
 
@@ -53,7 +63,8 @@ export const PostApplication = async (req: Request, res: Response) => {
 // * GET
 // * /application
 export const GetApplication = async (req: Request, res: Response) => {
-  // ! completed === false 인 얘만
+  // ! 호스트가 자신의 매물의 신청현황을 확인하고, 승낙/거절을 할 때
+  // ! completed가 false만
   const userId = Number(req.headers['x-userid-header']);
 
   try {
@@ -122,29 +133,20 @@ export const DeleteApplication = async (req: Request, res: Response) => {
 // * PUT
 // * /application
 export const PutApplication = async (req: Request, res: Response) => {
-  // 승낙(agree) / 거부(reject)에 따라 컬럼 값 변경, 기본값 대기(wait)
-
   const { agree, reject, applyId } = req.body;
-console.log(req.body);
+
   try {
-    // const apply = await Application.findOne({ id: applyId });
-
     const apply = await getRepository(Application)
-    .createQueryBuilder('application')
-    .leftJoinAndSelect('application.house', 'house')
-    .leftJoinAndSelect('application.user', 'user')
-    .where('application.id = :id', { id: applyId })
-    .getOne();
-
-
-
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.house', 'house')
+      .leftJoinAndSelect('application.user', 'user')
+      .where('application.id = :id', { id: applyId })
+      .getOne();
 
     if (!apply) {
       res.status(404).json({ error: 'apply가 존재하지 않습니다.' });
       return;
     }
-    
-    console.log('apply is ', apply);
 
     if (agree) {
       // 승낙했을 때
