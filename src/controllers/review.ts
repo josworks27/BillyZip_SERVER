@@ -6,24 +6,20 @@ import { getConnection } from 'typeorm';
 
 // ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
 // * POST
-// * /house/:id/comment
+// * /house/:id/review
 export const postReview = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { comment, rating } = req.body;
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-    // 토큰 id로 user 찾기
     const user = await User.findOne({ id: userId });
-
     if (!user) {
       res.status(404).json({ error: 'user가 존재하지 않습니다.' });
       return;
     }
 
-    // params id로 house 찾기
     const house = await House.findOne({ id: Number(id) });
-
     if (!house) {
       res.status(404).json({ error: 'house가 존재하지 않습니다.' });
       return;
@@ -46,7 +42,7 @@ export const postReview = async (req: Request, res: Response) => {
 };
 
 // * PUT
-// * /houses/:id/comment
+// * /houses/:id/review
 export const putReview = async (req: Request, res: Response) => {
   const { commentId, comment, rating } = req.body;
 
@@ -66,21 +62,26 @@ export const putReview = async (req: Request, res: Response) => {
 };
 
 // * DELETE
-// * /houses/:id/comment
+// * /houses/:id/review/:reviewId
 export const deleteReview = async (req: Request, res: Response) => {
-  const { commentId } = req.body;
-
-  if (!commentId) throw new Error('req.body에 문제가 있습니다.');
+  const { reviewId } = req.params;
+  const userId = Number(req.headers['x-userid-header']);
 
   try {
     const deleteResult = await getConnection()
       .createQueryBuilder()
       .delete()
       .from(Review)
-      .where('id = :id', { id: commentId })
+      .where('id = :id', { id: reviewId })
+      .andWhere('userId = :userId', { userId: userId })
       .execute();
 
-    res.status(200).json(deleteResult);
+    if (deleteResult.affected) {
+      res.sendStatus(200);
+    } else {
+      res.status(404).json({ error: '해당하는 리뷰가 존재하지 않습니다.' });
+    }
+
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });
