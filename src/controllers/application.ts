@@ -53,6 +53,7 @@ export const PostApplication = async (req: Request, res: Response) => {
 // * GET
 // * /application
 export const GetApplication = async (req: Request, res: Response) => {
+  // ! completed === false 인 얘만
   const userId = Number(req.headers['x-userid-header']);
 
   try {
@@ -60,7 +61,8 @@ export const GetApplication = async (req: Request, res: Response) => {
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.house', 'house')
       .leftJoinAndSelect('application.user', 'user')
-      .where('house.userId = :userId', { userId: userId })
+      .where('application.completed = :completed', { completed: false })
+      .andWhere('house.userId = :userId', { userId: userId })
       .getMany();
 
     // image 추가하기
@@ -70,7 +72,7 @@ export const GetApplication = async (req: Request, res: Response) => {
         .createQueryBuilder('image')
         .leftJoinAndSelect('image.house', 'house')
         .where('image.houseId = :houseId', { houseId: apply[i].house.id })
-        .getMany();
+        .getOne();
 
       images.push(image);
     }
@@ -89,29 +91,80 @@ export const GetApplication = async (req: Request, res: Response) => {
 // * DELETE
 // * /application
 export const DeleteApplication = async (req: Request, res: Response) => {
-  const { userId, houseId } = req.body;
+  // ! 신청현황에서 자신이 신청한 apply를 삭제
+  // ! 신청한 유저가 삭제
+  // const { applyId } = req.body;
+  // const userId = Number(req.headers['x-userid-header']);
+  // try {
+  //   const apply = await getConnection()
+  //     .createQueryBuilder()
+  //     .leftJoinAndSelect('application.house', 'house')
+  //     .delete()
+  //     .from(Application)
+  //     .where('application.id = :id', { id: applyId })
+  //     .where('house.userId = :userId', { userId: userId })
+  //     .execute();
+  //   if (apply.affected === 1) {
+  //     res.sendStatus(200);
+  //   } else if (apply.affected === 0) {
+  //     res.status(404).json({ error: '해당하는 신청이 존재하지 않습니다.' });
+  //   }
+  // } catch (err) {
+  //   console.error('error is ', err);
+  //   res.status(500).json({ error: err });
+  // }
+};
+
+// * PUT
+// * /application
+export const PutApplication = async (req: Request, res: Response) => {
+  const { agree, reject, applyId } = req.body;
 
   try {
-    const apply = await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Application)
-      .where('application.userId = :userId', { userId: userId })
-      .andWhere('application.houseId = :houseId', { houseId: houseId })
-      .execute();
+    const apply = await Application.findOne({ id: applyId });
+    if (!apply) {
+      res.status(404).json({ error: 'apply가 존재하지 않습니다.' });
+      return;
+    }
 
-    if (apply.affected === 1) {
-      res.sendStatus(200);
-    } else if (apply.affected === 0) {
-      res.status(404).json({ error: '해당하는 신청이 존재하지 않습니다.' });
+    if (agree) {
+      // 승낙했을 때
+      // ! status 변경
+      await getConnection()
+        .createQueryBuilder()
+        .update(Application)
+        .set({ status: 'agree', completed: true })
+        .where('id = :id', { id: applyId })
+        .execute();
+
+      // ! 해당 유저의 livingHouse가 신청된 매물의 아이디로 변경
+      await getConnection()
+        .createQueryBuilder()
+        .update(User)
+        .set({ livingHouse: Number(apply.house) })
+        .where('id = :id', { id: apply.user })
+        .execute();
+
+      // ! house의 status를 살고 있는 걸로 변경
+      await getConnection()
+        .createQueryBuilder()
+        .update(House)
+        .set({ status: true })
+        .where('id = :id', { id: apply.house })
+        .execute();
+    } else if (reject) {
+      // 거절했을 때
+      // ! status 변경
+      await getConnection()
+        .createQueryBuilder()
+        .update(Application)
+        .set({ status: 'reject', completed: true })
+        .where('id = :id', { id: applyId })
+        .execute();
     }
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });
   }
 };
-
-// * PUT
-// * /application
-
-// ! 집주인이 승락하고 이사한 날을 기준으로 expiry = new Data();
+// 승낙(agree) / 거부(reject)에 따라 컬럼 값 변경, 기본값 대기(wait)

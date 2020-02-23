@@ -96,30 +96,26 @@ export const GetSignout = (req: Request, res: Response) => {
 };
 
 // GET
-// /users/current-info
+// /users/currentInfo
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
     const userInfo = await getConnection()
       .createQueryBuilder()
-      .select(['user.livingHouse'])
+      .select(['user'])
       .from(User, 'user')
       .where('user.id =:id', { id: userId })
-      .getMany();
+      .getOne();
 
-    if (userInfo.length === 0) {
-      // 데이터가 없는 것이 정상일 수 있는 상황
-      // 204 : No contents
-
-      res.status(204).json(userInfo);
+    if (!userInfo) {
+      res.status(404).json({ error: 'userInfo가 존재하지 않습니다.' });
     } else {
-      // 현재 구독 플랜 있다는 뜻은 살고 있는 집이 있다는 뜻
       const livingHouse = await getConnection()
         .createQueryBuilder()
         .select(['house'])
         .from(House, 'house')
-        .where('house.id =:id', { id: userInfo[0].livingHouse })
+        .where('house.id =:id', { id: userInfo.livingHouse })
         .getMany();
 
       res.status(200).json(livingHouse);

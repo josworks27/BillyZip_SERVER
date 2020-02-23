@@ -13,9 +13,8 @@ export const postReview = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     // 토큰 id로 user 찾기
-    const user = await User.findOne({ id:  userId });
+    const user = await User.findOne({ id: userId });
 
     if (!user) {
       res.status(404).json({ error: 'user가 존재하지 않습니다.' });

@@ -3,7 +3,7 @@ import twilioHelper from '../util/twilioHelper';
 
 // ! 임시객체로 유저 전화번호와 인증번호를 저장
 // ! 유저 전화번호로 요청이 오면 임시객체로 인증번호와 유저 전화번호를 비교하는데 사용
-let tempAuthObj: {[index: number]: number};
+let tempAuthObj: { [index: number]: number };
 
 // * POST
 // * /auth

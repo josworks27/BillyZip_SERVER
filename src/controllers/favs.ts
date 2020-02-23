@@ -12,12 +12,11 @@ export const PostFavs = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     const result = await getRepository(Favorite)
       .createQueryBuilder('favorite')
       .where('favorite.houseId = :houseId', { houseId: houseId })
       .andWhere('favorite.userId = :userId', {
-        userId:  userId,
+        userId: userId,
       })
       .getOne();
 
@@ -29,7 +28,7 @@ export const PostFavs = async (req: Request, res: Response) => {
         return;
       }
 
-      const user = await User.findOne({ id:  userId });
+      const user = await User.findOne({ id: userId });
       if (!user) {
         res.status(404).json({ error: 'user가 존재하지 않습니다.' });
         return;
@@ -57,13 +56,12 @@ export const GetFavs = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     const favs = await getRepository(Favorite)
       .createQueryBuilder('favorite')
       .leftJoinAndSelect('favorite.user', 'user')
       .leftJoinAndSelect('favorite.house', 'house')
       .where('favorite.userId = :userId', {
-        userId:  userId,
+        userId: userId,
       })
       .getMany();
 
@@ -104,14 +102,13 @@ export const DeleteFavs = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     const favResult = await getConnection()
       .createQueryBuilder()
       .delete()
       .from(Favorite)
       .where('favorite.houseId = :houseId', { houseId: id })
       .andWhere('favorite.userId = :userId', {
-        userId:  userId,
+        userId: userId,
       })
       .execute();
 
