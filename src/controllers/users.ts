@@ -111,6 +111,8 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
     if (!userInfo) {
       res.status(404).json({ error: 'userInfo가 존재하지 않습니다.' });
     } else {
+      const userCurrnetPlan = userInfo.currentPlan;
+
       const livingHouse = await getConnection()
         .createQueryBuilder()
         .select(['house'])
@@ -118,7 +120,9 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
         .where('house.id =:id', { id: userInfo.livingHouse })
         .getMany();
 
-      res.status(200).json(livingHouse);
+      res
+        .status(200)
+        .json({ livingHouse: livingHouse, currentPlan: userCurrnetPlan });
     }
   } catch (err) {
     console.error('error is ', err);
