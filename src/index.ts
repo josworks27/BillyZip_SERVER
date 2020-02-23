@@ -40,7 +40,7 @@ app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(
   cors({
-    origin: ['http://192.168.219.102'],
+    origin: ['http://172.30.1.54'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   }),

@@ -14,18 +14,17 @@ export const PostPayment = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     // ! 디비: user에 currentPlan 업데이트 하기 / payment에 위 정보 생성하기
     // currentPlan 업데이트 하기
     await getConnection()
       .createQueryBuilder()
       .update(User)
       .set({ currentPlan: subscribePlan })
-      .where('id = :id', { id:  userId })
+      .where('id = :id', { id: userId })
       .execute();
 
     // payment에 위 정보 생성하기
-    const currentUser = await User.findOne({ id:  userId });
+    const currentUser = await User.findOne({ id: userId });
 
     if (!currentUser) {
       res.status(404).json({ error: 'currentUser가 존재하지 않습니다.' });
@@ -59,11 +58,10 @@ export const GetPayment = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-     
     const payments = await getRepository(Payment)
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.user', 'user')
-      .where('payment.userId = :userId', { userId:  userId })
+      .where('payment.userId = :userId', { userId: userId })
       .orderBy('payment.created_at', 'DESC')
       .getMany();
 

@@ -16,6 +16,12 @@ export class Application extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column({ default: 'wait' })
+  status!: string;
+
+  @Column({ default: false })
+  completed!: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

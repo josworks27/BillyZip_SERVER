@@ -6,3 +6,4 @@ export const applicationRouter = Router();
 applicationRouter.post('/', authChecker, applicationController.PostApplication);
 applicationRouter.get('/', authChecker, applicationController.GetApplication);
 applicationRouter.delete('/', authChecker, applicationController.DeleteApplication);
+applicationRouter.put('/', authChecker, applicationController.PutApplication);
