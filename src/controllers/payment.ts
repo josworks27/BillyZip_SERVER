@@ -45,7 +45,7 @@ export const PostPayment = async (req: Request, res: Response) => {
       `+82${currentUser.mobile.slice(1)}`,
     );
 
-    res.sendStatus(200);
+    res.status(200).json(currentUser);
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });
