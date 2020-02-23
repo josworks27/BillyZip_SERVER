@@ -7,23 +7,20 @@ import twilioHelper from '../util/twilioHelper';
 // * POST
 // * /payment
 export const PostPayment = async (req: Request, res: Response) => {
-  // 클라이언트로 부터 결제정보 받아서 payment 디비에 저장
-  // 필요한 정보: userId(with TOKEN) / subscribePlan / paymentDate / paymentOption
-
   const { subscribePlan, paymentDate, paymentOption } = req.body;
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-    // ! 디비: user에 currentPlan 업데이트 하기 / payment에 위 정보 생성하기
-    // currentPlan 업데이트 하기
     await getConnection()
       .createQueryBuilder()
       .update(User)
-      .set({ currentPlan: subscribePlan })
+      .set({
+        currentPlan: subscribePlan,
+        expiry: () => 'expiry + 30',
+      })
       .where('id = :id', { id: userId })
       .execute();
 
-    // payment에 위 정보 생성하기
     const currentUser = await User.findOne({ id: userId });
 
     if (!currentUser) {
@@ -39,7 +36,6 @@ export const PostPayment = async (req: Request, res: Response) => {
     newPayment.isActive = true;
     await newPayment.save();
 
-    // ! Twilio SMS로 유저 전화번호에 결제정보 보내주기
     await twilioHelper.paymentMsg(
       currentUser.name,
       `+82${currentUser.mobile.slice(1)}`,

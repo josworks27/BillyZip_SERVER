@@ -4,7 +4,6 @@ import { User } from '../entities/User';
 import { House } from '../entities/House';
 import { getConnection } from 'typeorm';
 
-// ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
 // * POST
 // * /house/:id/review
 export const postReview = async (req: Request, res: Response) => {
@@ -25,7 +24,6 @@ export const postReview = async (req: Request, res: Response) => {
       return;
     }
 
-    // new review 생성
     const newReview = new Review();
     newReview.comment = comment;
     newReview.rating = rating;
@@ -76,14 +74,13 @@ export const deleteReview = async (req: Request, res: Response) => {
       .andWhere('userId = :userId', { userId: userId })
       .execute();
 
-      console.log(deleteResult);
+    console.log(deleteResult);
 
     if (deleteResult.affected === 1) {
       res.sendStatus(200);
     } else {
       res.status(404).json({ error: '해당하는 리뷰가 존재하지 않습니다.' });
     }
-
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });

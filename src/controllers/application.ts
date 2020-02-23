@@ -18,23 +18,19 @@ export const PostApplication = async (req: Request, res: Response) => {
       .andWhere('application.house = :house', { house: houseId })
       .getOne();
 
-    // 중복되지 않을 떄 => 정상
     if (!checkApply) {
-      // 신청자 정보 가져오기
       const user = await User.findOne({ id: userId });
       if (!user) {
         res.status(404).json({ error: '유저정보가 존재하지 않습니다.' });
         return;
       }
 
-      // 매물 정보 가져오기
       const house = await House.findOne({ id: houseId });
       if (!house) {
         res.status(404).json({ error: '매물정보가 존재하지 않습니다.' });
         return;
       }
 
-      // 신청자의 currentPlan과 일치하는 매물인지 체크
       if (user.currentPlan !== house.plan) {
         res
           .status(403)
@@ -63,8 +59,6 @@ export const PostApplication = async (req: Request, res: Response) => {
 // * GET
 // * /application
 export const GetApplication = async (req: Request, res: Response) => {
-  // ! 호스트가 자신의 매물의 신청현황을 확인하고, 승낙/거절을 할 때
-  // ! completed가 false만
   const userId = Number(req.headers['x-userid-header']);
 
   try {
@@ -76,7 +70,6 @@ export const GetApplication = async (req: Request, res: Response) => {
       .andWhere('house.userId = :userId', { userId: userId })
       .getMany();
 
-    // image 추가하기
     const images = [];
     for (let i = 0; i < apply.length; i++) {
       const image = await getRepository(Image)
@@ -102,11 +95,6 @@ export const GetApplication = async (req: Request, res: Response) => {
 // * DELETE
 // * /application
 export const DeleteApplication = async (req: Request, res: Response) => {
-  // ! 신청현황에서 자신이 신청한 apply를 삭제
-  // ! 신청한 유저가 삭제
-
-  // * [유저인포] - [신청 현황]에서 삭제 버튼을 누르면 디비 application에서 해당 신청 삭제
-
   const { applyId } = req.body;
   const userId = Number(req.headers['x-userid-header']);
 
@@ -149,8 +137,6 @@ export const PutApplication = async (req: Request, res: Response) => {
     }
 
     if (agree) {
-      // 승낙했을 때
-      // ! status 변경
       await getConnection()
         .createQueryBuilder()
         .update(Application)
@@ -158,7 +144,6 @@ export const PutApplication = async (req: Request, res: Response) => {
         .where('id = :id', { id: applyId })
         .execute();
 
-      // ! 해당 유저의 livingHouse가 신청된 매물의 아이디로 변경
       await getConnection()
         .createQueryBuilder()
         .update(User)
@@ -166,7 +151,6 @@ export const PutApplication = async (req: Request, res: Response) => {
         .where('id = :id', { id: Number(apply.user.id) })
         .execute();
 
-      // ! house의 status를 살고 있는 걸로 변경
       await getConnection()
         .createQueryBuilder()
         .update(House)
@@ -176,8 +160,6 @@ export const PutApplication = async (req: Request, res: Response) => {
 
       res.sendStatus(200);
     } else if (reject) {
-      // 거절했을 때
-      // ! status 변경
       await getConnection()
         .createQueryBuilder()
         .update(Application)
@@ -196,15 +178,12 @@ export const PutApplication = async (req: Request, res: Response) => {
 // * GET
 // * /application/my-application
 export const GetMyApplication = async (req: Request, res: Response) => {
-  // ! 신청현황에서 보이는 내가 신청한 신청리스트들
-
   const userId = Number(req.headers['x-userid-header']);
 
   try {
     const applications = await getRepository(Application)
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.house', 'house')
-      // .where('application.completed = :completed', { completed: false })
       .where('application.userId = :userId', { userId: userId })
       .getMany();
 

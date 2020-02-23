@@ -28,20 +28,6 @@ const upload = multer({
   }),
 });
 
-// Image Upload into /uploads
-// const upload = multer({
-//   storage: multer.diskStorage({
-//     // set a localstorage destination
-//     destination: (req, file, cb) => {
-//       cb(null, './src/uploads/');
-//     },
-//     // convert a file name
-//     filename: (req, file, cb) => {
-//       cb(null, new Date().valueOf() + path.extname(file.originalname));
-//     },
-//   }),
-// });
-
 // housesController
 housesRouter.post('/', upload.array('images', 7), authChecker, housesController.PostHouse);
 housesRouter.get('/', authChecker, housesController.GetMainHouses);
@@ -54,7 +40,6 @@ housesRouter.put('/:id', upload.array('images', 7), authChecker, housesControlle
 housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController
-// ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
 housesRouter.post('/:id/review', authChecker, reviewController.postReview);
 housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
 housesRouter.delete('/:id/review/:reviewId', authChecker, reviewController.deleteReview);

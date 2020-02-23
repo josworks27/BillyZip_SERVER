@@ -17,12 +17,8 @@ export const PostSignup = async (req: Request, res: Response) => {
     const hashedPwd = await bcrypt.hash(password, saltRounds);
 
     if (userEmail) {
-      // User DB에 email이 있는 경우
       res.status(409).json('이미 가입된 이메일입니다');
-      // 이미 가입된 이메일로 가입 시도시, 409
     } else {
-      // User DB에 email이 없는 경우
-      // 회원 가입 하기
       const user = new User();
       user.email = email;
       user.password = hashedPwd;
@@ -31,8 +27,7 @@ export const PostSignup = async (req: Request, res: Response) => {
       user.gender = gender;
       user.isActive = true;
       user.birth = birth;
-      // ! 아래 테스트용 임시
-      user.expiry = 3;
+      user.expiry = 30;
       await user.save();
       res.status(200).json('회원가입이 완료되었습니다');
     }
@@ -44,10 +39,6 @@ export const PostSignup = async (req: Request, res: Response) => {
 
 // * POST
 // * /users/signin
-// 로그인 구현
-// 이메일이 일치하지 않는경우, undefind
-// 비밀번호가 일치하지 않는 경우, undefind
-// 이메일, 비밀번호가 일치하는 경우, 이메일과 비밀번호
 export const PostSignin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -55,11 +46,9 @@ export const PostSignin = async (req: Request, res: Response) => {
     const userEmail = await User.findOne({ email: email });
 
     if (userEmail) {
-      // 사용자 이메일이 존재할 때,
       const checkPwd = await bcrypt.compare(password, userEmail.password);
 
       if (checkPwd) {
-        // 사용자 비밀번호 일치할 때,
         const token = jwt.sign(
           {
             userId: userEmail.id,
@@ -77,7 +66,6 @@ export const PostSignin = async (req: Request, res: Response) => {
           userName: userEmail.name,
         });
       } else {
-        // 사용자 비밀번호 일치하지 않을 때,
         res.status(401).json('비밀번호가 일치하지 않아요');
       }
     } else {
@@ -89,14 +77,14 @@ export const PostSignin = async (req: Request, res: Response) => {
   }
 };
 
-// GET
-// /users/signout
+// * GET
+// * /users/signout
 export const GetSignout = (req: Request, res: Response) => {
   res.send('signOut success!');
 };
 
-// GET
-// /users/currentInfo
+// * GET
+// * /users/currentInfo
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
@@ -129,10 +117,8 @@ export const GetCurrentInfo = async (req: Request, res: Response) => {
     res.status(500).json({ error: err });
   }
 };
-// GET
-// /users/list
-// house의 userId : 매물 등록 작성자의 고유한 아이디
-// 매물리스트 가져오기 위해서 houseId === id
+// * GET
+// * /users/list
 export const GetList = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
@@ -155,8 +141,8 @@ export const GetList = async (req: Request, res: Response) => {
   }
 };
 
-// GET
-// /users/my-info
+// * GET
+// * /users/my-info
 export const GetMyInfo = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
@@ -186,8 +172,8 @@ export const GetMyInfo = async (req: Request, res: Response) => {
   }
 };
 
-// PUT
-// /users/my-info
+// * PUT
+// * /users/my-info
 export const PutMyInfo = async (req: Request, res: Response) => {
   const { name, gender, birth, password, email, mobile } = req.body;
   const userId = Number(req.headers['x-userid-header']);
@@ -227,9 +213,8 @@ export const PutMyInfo = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE
-// users/my-info
-
+// * DELETE
+// * users/my-info
 export const DeleteMyInfo = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.headers['x-userid-header']);
@@ -252,8 +237,8 @@ export const DeleteMyInfo = async (req: Request, res: Response) => {
   }
 };
 
-// PUT
-// /auth/mobile
+// * PUT
+// * /auth/mobile
 export const PutMobile = async (req: Request, res: Response) => {
   const { userPhoneNum } = req.body;
   const userId = Number(req.headers['x-userid-header']);

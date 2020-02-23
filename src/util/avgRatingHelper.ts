@@ -10,7 +10,7 @@ const createAvgRatingHelper = {
         avgRating += house.reviews[i].rating;
       }
       avgRating = avgRating / house.reviews.length;
-      house['avgRating'] = avgRating;
+      house['avgRating'] = Number(avgRating.toFixed(2));
     } else {
       house['avgRating'] = 0;
     }
@@ -27,7 +27,7 @@ const createAvgRatingHelper = {
           avgRating += houses[i].reviews[j].rating;
         }
         avgRating = avgRating / houses[i].reviews.length;
-        houses[i]['avgRating'] = avgRating;
+        houses[i]['avgRating'] = Number(avgRating.toFixed(2));
       } else {
         houses[i]['avgRating'] = 0;
       }

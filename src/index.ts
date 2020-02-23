@@ -3,7 +3,6 @@ import { createConnection } from 'typeorm';
 import * as express from 'express';
 import * as compression from 'compression';
 import * as bodyParser from 'body-parser';
-import * as cookieParser from 'cookie-parser';
 import * as cors from 'cors';
 import * as morgan from 'morgan';
 import 'dotenv/config';
@@ -36,18 +35,14 @@ app.use(
     extended: false,
   }),
 );
-app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(
   cors({
-    origin: ['http://172.30.1.54'],
+    origin: ['http://192.168.219.103'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   }),
 );
-
-// Local Storage for static files
-// app.use(express.static('uploads'));
 
 // Routes
 app.use('/users', usersRouter);
