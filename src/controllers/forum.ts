@@ -21,9 +21,6 @@ export const PostForum = async (req: Request, res: Response) => {
       return;
     }
 
-    // 포럼 메세지 존재하는지 확인후 메세지 저장하기
-    // ! 없으면 디비에 insert하고
-    // ! 있으면 디비에 update하기
     const forum = await getRepository(Forum).findOne({
       where: {
         hostId: hostId,
@@ -31,7 +28,6 @@ export const PostForum = async (req: Request, res: Response) => {
     });
 
     if (!forum) {
-      // 포럼이 없을 때 => 생성
       console.log('포럼 없을 때 실행');
       const newForum = new Forum();
       newForum.hostId = hostId;
@@ -39,7 +35,6 @@ export const PostForum = async (req: Request, res: Response) => {
       newForum.isActive = true;
       await newForum.save();
     } else {
-      // 포럼이 있을 때 => 갱신
       console.log('포럼 있을 때 실행');
       await getConnection()
         .createQueryBuilder()
@@ -49,9 +44,6 @@ export const PostForum = async (req: Request, res: Response) => {
         .execute();
     }
 
-    // 조인포럼에 유저와 호스트 있는지 확인 후 없으면 생성, 있으면 종료
-    // ! 없으면 디비에 insert하고
-    // ! 있으면 종료
     const joinForum = await getRepository(JoinForum).findOne({
       where: {
         userId: myId,
@@ -60,7 +52,6 @@ export const PostForum = async (req: Request, res: Response) => {
     });
 
     if (!joinForum) {
-      // 조인포럼이 없을 때
       console.log('조인포럼 없을 때 실행');
       const newJoinForum = new JoinForum();
       newJoinForum.userId = myId;

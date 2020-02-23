@@ -11,9 +11,6 @@ import {
 
 import { House } from './House';
 import { User } from './User';
-
-// export type ratingGrade = 1 | 2 | 3 | 4 | 5;
-
 @Entity()
 export class Review extends BaseEntity {
   @PrimaryGeneratedColumn()

@@ -21,7 +21,6 @@ export const PostFavs = async (req: Request, res: Response) => {
       .getOne();
 
     if (!result) {
-      // 중복 없으면 생성
       const house = await House.findOne({ id: houseId });
       if (!house) {
         res.status(404).json({ error: 'house가 존재하지 않습니다.' });
@@ -83,7 +82,6 @@ export const GetFavs = async (req: Request, res: Response) => {
         return;
       }
 
-      // avgRating 추가
       const avgRatingAddedHouse = createAvgRatingHelper.single(house);
       favs[i]['house'] = avgRatingAddedHouse;
     }

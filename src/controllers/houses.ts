@@ -61,14 +61,12 @@ export const PostHouse = async (req: Request, res: Response) => {
 
     await newAmenity.save();
 
-    // ! 토큰에 있는 user id와 같은 유저를 찾는다.
     const user = await User.findOne({ id: userId });
     if (!user) {
       res.status(404).json({ error: 'user가 존재하지 않습니다.' });
       return;
     }
 
-    // 요청받은 정보로 새로운 House 생성하기
     const newHouse = new House();
     newHouse.plan = plan;
     newHouse.type = type;
@@ -88,13 +86,11 @@ export const PostHouse = async (req: Request, res: Response) => {
     newHouse.user = user;
     await newHouse.save();
 
-    // 반복문으로 여러장의 새로운 Image 생성하기
     for (let i = 0; i < req.files.length; i++) {
       const { originalname, location } = req.files[i];
       const imageName = originalname.split('.');
 
       if (imageName[0] === 'mainImg') {
-        // 메인이미지 일 때
         const newImage = new Image();
         newImage.filePath = location;
         newImage.fileName = originalname;
@@ -103,7 +99,6 @@ export const PostHouse = async (req: Request, res: Response) => {
         newImage.isActive = true;
         await newImage.save();
       } else {
-        // 메인 이미지가 아닐 때
         const newImage = new Image();
         newImage.filePath = location;
         newImage.fileName = originalname;
@@ -154,7 +149,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
     }
 
     // * 각각의 매물의 리뷰 평균구하기
-    // interface
     const avgRating: { [index: number]: number } = {};
 
     for (let i = 0; i < houses.length; i++) {
@@ -170,8 +164,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       }
     }
 
-    // 객체 내림차순으로 정렬
-    // 정렬해서 4개만 필터링
     const sortArr = [];
     for (const prop in avgRating) {
       sortArr.push([prop, avgRating[prop]]);
@@ -180,12 +172,10 @@ export const GetMainHouses = async (req: Request, res: Response) => {
       return b[1] - a[1];
     });
 
-    // 점수대별 랜덤매물
     const overFourHouses = ratingRangeHelper.overFourHouses(sortArr);
     const rankHouses = [];
 
     if (overFourHouses.length > 3) {
-      // 매물이 4개 이상일 때
       for (let i = 0; i < 4; i++) {
         const rankResult: House | undefined = await getRepository(House)
           .createQueryBuilder('house')
@@ -203,7 +193,6 @@ export const GetMainHouses = async (req: Request, res: Response) => {
         rankHouses.push(rankResult);
       }
     } else {
-      // 매물이 4개 이하일 때
       const overThreeHouses = ratingRangeHelper.overThreeUnderFourHouses(
         sortArr,
       );
@@ -287,7 +276,6 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
       return;
     }
 
-    // avgRating 추가하기
     const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
 
     res.status(200).json(avgRatingAddedHouses);
@@ -321,7 +309,6 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
         res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
         return;
       }
-      // avgRating 추가하기
       const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
 
       res.status(200).json(avgRatingAddedHouses);
@@ -371,7 +358,6 @@ export const GetPartHouses = async (req: Request, res: Response) => {
       return;
     }
 
-    // avgRating 추가하기
     const avgRatingAddedHouses = createAvgRatingHelper.multiple(typeHouses);
 
     res.status(200).json(avgRatingAddedHouses);
@@ -401,7 +387,6 @@ export const GetHouse = async (req: Request, res: Response) => {
       return;
     }
 
-    // user 조인한 reviews 만들기
     const reviews = await getRepository(Review)
       .createQueryBuilder('review')
       .leftJoinAndSelect('review.user', 'user')
@@ -410,10 +395,8 @@ export const GetHouse = async (req: Request, res: Response) => {
 
     house['reviews'] = reviews;
 
-    // avgRating 추가하기
     const avgRatingAddedHouses = createAvgRatingHelper.single(house);
 
-    // 이미 favs한 매물인지 확인하기 true, false
     const fav = await getRepository(Favorite)
       .createQueryBuilder('favorite')
       .where('favorite.userId = :userId', {
@@ -475,7 +458,6 @@ export const PutHouse = async (req: Request, res: Response) => {
     }
 
     if (house.user.id === userId) {
-      // 수정할 권한 있음
       await getConnection()
         .createQueryBuilder()
         .update(House)
@@ -513,16 +495,12 @@ export const PutHouse = async (req: Request, res: Response) => {
         .where('id = :id', { id: id })
         .execute();
 
-      // ! 이미지 수정
-      // * image에서 houseId === id 전부 삭제
       await getConnection()
         .createQueryBuilder()
         .delete()
         .from(Image)
         .where('house = :house', { house: house.id })
         .execute();
-
-      // * image에 새로운 이미지들로 다시 생성하기
 
       const houseForImg = await House.findOne({ id: house.id });
 
@@ -531,13 +509,11 @@ export const PutHouse = async (req: Request, res: Response) => {
         return;
       }
 
-      // 반복문으로 여러장의 새로운 Image 생성하기
       for (let i = 0; i < req.files.length; i++) {
         const { originalname, location } = req.files[i];
         const imageName = originalname.split('.');
 
         if (imageName[0] === 'mainImg') {
-          // 메인이미지 일 때
           const newImage = new Image();
           newImage.filePath = location;
           newImage.fileName = originalname;
@@ -546,7 +522,6 @@ export const PutHouse = async (req: Request, res: Response) => {
           newImage.isActive = true;
           await newImage.save();
         } else {
-          // 메인 이미지가 아닐 때
           const newImage = new Image();
           newImage.filePath = location;
           newImage.fileName = originalname;
@@ -559,7 +534,6 @@ export const PutHouse = async (req: Request, res: Response) => {
 
       res.status(200).json({ houseId: house.id });
     } else {
-      // 수정할 권한 없음
       res.sendStatus(401);
     }
   } catch (err) {
@@ -587,7 +561,6 @@ export const DeleteHouse = async (req: Request, res: Response) => {
     }
 
     if (house.user.id === userId) {
-      // 매물 지우기
       await getConnection()
         .createQueryBuilder()
         .delete()
@@ -595,7 +568,6 @@ export const DeleteHouse = async (req: Request, res: Response) => {
         .where('id = :id', { id: id })
         .execute();
 
-      // 어메너티 지우기
       await getConnection()
         .createQueryBuilder()
         .delete()
@@ -603,7 +575,6 @@ export const DeleteHouse = async (req: Request, res: Response) => {
         .where('id = :id', { id: id })
         .execute();
 
-      // 리뷰도 지우기
       await getConnection()
         .createQueryBuilder()
         .delete()
