@@ -55,6 +55,6 @@ housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController
 // ! GET은 상세 매물 갖고 올 때 조인해서 응답하기!
-housesRouter.post('/:id/comment', authChecker, reviewController.postReview);
-housesRouter.put('/:id/comment', authChecker, reviewController.putReview);
-housesRouter.delete('/:id/comment', authChecker, reviewController.deleteReview);
+housesRouter.post('/:id/review', authChecker, reviewController.postReview);
+housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
+housesRouter.delete('/:id/review/:reviewId', authChecker, reviewController.deleteReview);

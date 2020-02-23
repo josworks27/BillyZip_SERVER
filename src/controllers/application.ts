@@ -93,31 +93,37 @@ export const GetApplication = async (req: Request, res: Response) => {
 export const DeleteApplication = async (req: Request, res: Response) => {
   // ! 신청현황에서 자신이 신청한 apply를 삭제
   // ! 신청한 유저가 삭제
-  // const { applyId } = req.body;
-  // const userId = Number(req.headers['x-userid-header']);
-  // try {
-  //   const apply = await getConnection()
-  //     .createQueryBuilder()
-  //     .leftJoinAndSelect('application.house', 'house')
-  //     .delete()
-  //     .from(Application)
-  //     .where('application.id = :id', { id: applyId })
-  //     .where('house.userId = :userId', { userId: userId })
-  //     .execute();
-  //   if (apply.affected === 1) {
-  //     res.sendStatus(200);
-  //   } else if (apply.affected === 0) {
-  //     res.status(404).json({ error: '해당하는 신청이 존재하지 않습니다.' });
-  //   }
-  // } catch (err) {
-  //   console.error('error is ', err);
-  //   res.status(500).json({ error: err });
-  // }
+
+  // * [유저인포] - [신청 현황]에서 삭제 버튼을 누르면 디비 application에서 해당 신청 삭제
+
+  const { applyId } = req.body;
+  const userId = Number(req.headers['x-userid-header']);
+
+  try {
+    const apply = await getConnection()
+      .createQueryBuilder()
+      .delete()
+      .from(Application)
+      .where('application.id = :id', { id: applyId })
+      .andWhere('application.userId = :userId', { userId: userId })
+      .execute();
+
+    if (apply.affected === 1) {
+      res.sendStatus(200);
+    } else if (apply.affected === 0) {
+      res.status(404).json({ error: '해당하는 신청이 존재하지 않습니다.' });
+    }
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
+  }
 };
 
 // * PUT
 // * /application
 export const PutApplication = async (req: Request, res: Response) => {
+  // 승낙(agree) / 거부(reject)에 따라 컬럼 값 변경, 기본값 대기(wait)
+
   const { agree, reject, applyId } = req.body;
 
   try {
@@ -152,6 +158,8 @@ export const PutApplication = async (req: Request, res: Response) => {
         .set({ status: true })
         .where('id = :id', { id: apply.house })
         .execute();
+
+      res.sendStatus(200);
     } else if (reject) {
       // 거절했을 때
       // ! status 변경
@@ -161,10 +169,38 @@ export const PutApplication = async (req: Request, res: Response) => {
         .set({ status: 'reject', completed: true })
         .where('id = :id', { id: applyId })
         .execute();
+
+      res.sendStatus(200);
     }
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });
   }
 };
-// 승낙(agree) / 거부(reject)에 따라 컬럼 값 변경, 기본값 대기(wait)
+
+// * GET
+// * /application/my-application
+export const GetMyApplication = async (req: Request, res: Response) => {
+  // ! 신청현황에서 보이는 내가 신청한 신청리스트들
+
+  const userId = Number(req.headers['x-userid-header']);
+
+  try {
+    const applications = await getRepository(Application)
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.house', 'house')
+      // .where('application.completed = :completed', { completed: false })
+      .where('application.userId = :userId', { userId: userId })
+      .getMany();
+
+    if (applications.length === 0) {
+      res.status(404).json({ error: 'applications이 존재하지 않습니다.' });
+      return;
+    }
+
+    res.status(200).json(applications);
+  } catch (err) {
+    console.error('error is ', err);
+    res.status(500).json({ error: err });
+  }
+};
