@@ -76,7 +76,9 @@ export const deleteReview = async (req: Request, res: Response) => {
       .andWhere('userId = :userId', { userId: userId })
       .execute();
 
-    if (deleteResult.affected) {
+      console.log(deleteResult);
+
+    if (deleteResult.affected === 1) {
       res.sendStatus(200);
     } else {
       res.status(404).json({ error: '해당하는 리뷰가 존재하지 않습니다.' });

@@ -125,13 +125,26 @@ export const PutApplication = async (req: Request, res: Response) => {
   // 승낙(agree) / 거부(reject)에 따라 컬럼 값 변경, 기본값 대기(wait)
 
   const { agree, reject, applyId } = req.body;
-
+console.log(req.body);
   try {
-    const apply = await Application.findOne({ id: applyId });
+    // const apply = await Application.findOne({ id: applyId });
+
+    const apply = await getRepository(Application)
+    .createQueryBuilder('application')
+    .leftJoinAndSelect('application.house', 'house')
+    .leftJoinAndSelect('application.user', 'user')
+    .where('application.id = :id', { id: applyId })
+    .getOne();
+
+
+
+
     if (!apply) {
       res.status(404).json({ error: 'apply가 존재하지 않습니다.' });
       return;
     }
+    
+    console.log('apply is ', apply);
 
     if (agree) {
       // 승낙했을 때
@@ -147,8 +160,8 @@ export const PutApplication = async (req: Request, res: Response) => {
       await getConnection()
         .createQueryBuilder()
         .update(User)
-        .set({ livingHouse: Number(apply.house) })
-        .where('id = :id', { id: apply.user })
+        .set({ livingHouse: Number(apply.house.id) })
+        .where('id = :id', { id: Number(apply.user.id) })
         .execute();
 
       // ! house의 status를 살고 있는 걸로 변경
@@ -156,7 +169,7 @@ export const PutApplication = async (req: Request, res: Response) => {
         .createQueryBuilder()
         .update(House)
         .set({ status: true })
-        .where('id = :id', { id: apply.house })
+        .where('id = :id', { id: Number(apply.house.id) })
         .execute();
 
       res.sendStatus(200);
