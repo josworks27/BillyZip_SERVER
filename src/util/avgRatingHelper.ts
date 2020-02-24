@@ -19,9 +19,9 @@ const createAvgRatingHelper = {
   },
 
   // 다수의 house용
-  multiple: (houses: House[]) => {
-    let avgRating = 0;
+  multiple: (houses: any) => {
     for (let i = 0; i < houses.length; i++) {
+      let avgRating = 0;
       if (houses[i].reviews.length > 0) {
         for (let j = 0; j < houses[i].reviews.length; j++) {
           avgRating += houses[i].reviews[j].rating;
