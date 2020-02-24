@@ -290,53 +290,180 @@ export const PostFilterHouse = async (req: Request, res: Response) => {
 export const PostSearchHouse = async (req: Request, res: Response) => {
   if (req.body.searchWord) {
     const { searchWord } = req.body;
-    const searchWordArray = searchWord.split(' ');
+    const allSearchArray = [];
 
-    const convertedWords: string[] = searchWordArray.map((word: string) => {
-      return { title: Like(`%${word}%`) };
-    });
+    // 각 요소를 TypeORM으로 쿼리하기 위해 where 조건을 만들고 allSearchArray에 담는다.
+    allSearchArray.push(
+      searchWord.split(' ').map((word: string) => {
+        return { type: Like(`%${word}%`) };
+      }),
+    );
+    allSearchArray.push(
+      searchWord.split(' ').map((word: string) => {
+        return { adminDistrict: Like(`%${word}%`) };
+      }),
+    );
+    allSearchArray.push(
+      searchWord.split(' ').map((word: string) => {
+        return { title: Like(`%${word}%`) };
+      }),
+    );
+    allSearchArray.push(
+      searchWord.split(' ').map((word: string) => {
+        return { description: Like(`%${word}%`) };
+      }),
+    );
+    allSearchArray.push(
+      searchWord.split(' ').map((word: string) => {
+        return { houseRule: Like(`%${word}%`) };
+      }),
+    );
 
-    try {
-      const houses = await getRepository(House).find({
-        relations: ['amenity', 'reviews', 'images'],
-        where: convertedWords,
-        order: {
-          updatedAt: 'DESC',
-        },
-      });
+    console.log('all', allSearchArray);
 
-      if (houses.length === 0) {
-        res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
-        return;
+    // ! 단어형, 문장형 분기
+    if (searchWord.split(' ').length > 1) {
+      // ! 문장형
+      // ['부산', '해운대에', '있는', '뷰가', '좋은', '아파트']
+      res.end();
+    } else {
+      // ! 단어형
+      // ['부산']
+
+      // 각 매물의 총점
+      const housePoint: any = {};
+      const temp = [];
+
+      // 검색
+      for (let i = 0; i < allSearchArray.length; i++) {
+        const houses = await getRepository(House).find({
+          where: allSearchArray[i],
+        });
+
+        temp.push(houses);
+
+        if (houses.length > 0) {
+          // 매물이 하나 이상일 때
+          for (let j = 0; j < houses.length; j++) {
+            // 가중치 3 요소
+            if (
+              allSearchArray[i][0].hasOwnProperty('type') ||
+              allSearchArray[i][0].hasOwnProperty('adminDistrict')
+            ) {
+              if (housePoint.hasOwnProperty(houses[j].id)) {
+                // housePoint에 id가 있을 때
+                housePoint[houses[j].id] += 3;
+              } else {
+                // housePoint에 id가 없을 때
+                housePoint[houses[j].id] = 3;
+              }
+            } else if (allSearchArray[i][0].hasOwnProperty('title')) {
+              // 가중치 2 요소
+              if (housePoint.hasOwnProperty(houses[j].id)) {
+                // housePoint에 id가 있을 때
+                housePoint[houses[j].id] += 2;
+              } else {
+                // housePoint에 id가 없을 때
+                housePoint[houses[j].id] = 2;
+              }
+            } else if (
+              allSearchArray[i][0].hasOwnProperty('description') ||
+              allSearchArray[i][0].hasOwnProperty('houseRule')
+            ) {
+              // 가중치 1 요소
+              if (housePoint.hasOwnProperty(houses[j].id)) {
+                // housePoint에 id가 있을 때
+                housePoint[houses[j].id] += 1;
+              } else {
+                // housePoint에 id가 없을 때
+                housePoint[houses[j].id] = 1;
+              }
+            }
+          }
+        }
       }
-      const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
+      console.log('houses ??? ', temp);
+      console.log('housePoint ??? ', housePoint);
+
+      // ! housePoint 중 높은 순으로 반복문으로 다시 검색하고 조인하여 순서대로 배열에 푸시한다.
+      // 높은 순으로 정렬
+      const keysSorted = Object.keys(housePoint).sort(function(a, b) {
+        return housePoint[b] - housePoint[a];
+      });
+      console.log('keysSorted', keysSorted);
+      // [ '56', '19', '48' ]
+
+      // 디비 검색
+      const findedHouses = [];
+      for (let i = 0; i < keysSorted.length; i++) {
+        const house = await getRepository(House).findOne({
+          relations: ['amenity', 'reviews', 'images'],
+          where: [{ id: Number(keysSorted[i]) }],
+        });
+        findedHouses.push(house);
+      }
+
+      console.log(findedHouses);
+
+      // 배열을 avgRatingHelper를 이용해 avgRating 추가
+
+      const avgRatingAddedHouses = createAvgRatingHelper.multiple(findedHouses);
 
       res.status(200).json(avgRatingAddedHouses);
-    } catch (err) {
-      console.error('error is ', err);
-      res.status(500).json({ error: err });
     }
   } else {
-    try {
-      const houses = await getRepository(House).find({
-        relations: ['amenity', 'reviews', 'images'],
-        where: [],
-        order: {
-          updatedAt: 'DESC',
-        },
-      });
-
-      if (houses.length === 0) {
-        res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
-        return;
-      }
-
-      res.status(200).json(houses);
-    } catch (err) {
-      console.error('error is ', err);
-      res.status(500).json({ error: err });
-    }
+    res.status(400).json({ error: 'searchWord가 존재하지 않습니다.' });
+    return;
   }
+  // if (req.body.searchWord) {
+  //   const { searchWord } = req.body;
+  //   const searchWordArray = searchWord.split(' ');
+
+  //   const convertedWords: string[] = searchWordArray.map((word: string) => {
+  //     return { title: Like(`%${word}%`) };
+  //   });
+
+  //   try {
+  //     const houses = await getRepository(House).find({
+  //       relations: ['amenity', 'reviews', 'images'],
+  //       where: convertedWords,
+  //       order: {
+  //         updatedAt: 'DESC',
+  //       },
+  //     });
+
+  //     if (houses.length === 0) {
+  //       res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+  //       return;
+  //     }
+  //     const avgRatingAddedHouses = createAvgRatingHelper.multiple(houses);
+
+  //     res.status(200).json(avgRatingAddedHouses);
+  //   } catch (err) {
+  //     console.error('error is ', err);
+  //     res.status(500).json({ error: err });
+  //   }
+  // } else {
+  //   try {
+  //     const houses = await getRepository(House).find({
+  //       relations: ['amenity', 'reviews', 'images'],
+  //       where: [],
+  //       order: {
+  //         updatedAt: 'DESC',
+  //       },
+  //     });
+
+  //     if (houses.length === 0) {
+  //       res.status(404).json({ error: 'houses가 존재하지 않습니다.' });
+  //       return;
+  //     }
+
+  //     res.status(200).json(houses);
+  //   } catch (err) {
+  //     console.error('error is ', err);
+  //     res.status(500).json({ error: err });
+  //   }
+  // }
 };
 
 // * GET
