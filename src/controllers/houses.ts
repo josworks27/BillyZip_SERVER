@@ -291,125 +291,373 @@ export const PostSearchHouse = async (req: Request, res: Response) => {
   if (req.body.searchWord) {
     const { searchWord } = req.body;
     const allSearchArray = [];
+    const splitedWords = searchWord.split(' ');
 
     // 각 요소를 TypeORM으로 쿼리하기 위해 where 조건을 만들고 allSearchArray에 담는다.
     allSearchArray.push(
       searchWord.split(' ').map((word: string) => {
+        // searchWord 디비에 맞게 바꿔주기
+        if (word === '아파트') {
+          word = 'apart';
+        } else if (word === '원룸') {
+          word = 'oneroom';
+        } else if (word === '주택') {
+          word = 'dandok';
+        } else if (word === '빌라') {
+          word = 'villa';
+        } else if (word === '오피스텔') {
+          word = 'officetel';
+        }
+
         return { type: Like(`%${word}%`) };
       }),
     );
     allSearchArray.push(
-      searchWord.split(' ').map((word: string) => {
+      splitedWords.map((word: string) => {
         return { adminDistrict: Like(`%${word}%`) };
       }),
     );
     allSearchArray.push(
-      searchWord.split(' ').map((word: string) => {
+      splitedWords.map((word: string) => {
         return { title: Like(`%${word}%`) };
       }),
     );
     allSearchArray.push(
-      searchWord.split(' ').map((word: string) => {
+      splitedWords.map((word: string) => {
         return { description: Like(`%${word}%`) };
       }),
     );
     allSearchArray.push(
-      searchWord.split(' ').map((word: string) => {
+      splitedWords.map((word: string) => {
         return { houseRule: Like(`%${word}%`) };
       }),
     );
 
-    console.log('all', allSearchArray);
+    console.log('쪼개진 검색어 배열: ', splitedWords);
+    // console.log('all', allSearchArray);
 
     // ! 단어형, 문장형 분기
     if (searchWord.split(' ').length > 1) {
       // ! 문장형
       // ['부산', '해운대에', '있는', '뷰가', '좋은', '아파트']
-      res.end();
+
+      const housePoint: { [Index: string]: number } = {};
+
+      try {
+        // 단어 구분
+        for (let i = 0; i < allSearchArray[0].length; i++) {
+          for (let j = 0; j < allSearchArray.length; j++) {
+            // console.log(allSearchArray[0].length);
+            const houses = await getRepository(House).find({
+              // 같은 단어끼리 먼저 처리하기 위해 ji
+              where: allSearchArray[j][i],
+            });
+
+            if (houses.length > 0) {
+              // 매물이 하나 이상일 때
+              for (let k = 0; k < houses.length; k++) {
+                // 가중치 3 요소
+                if (
+                  allSearchArray[j][i].hasOwnProperty('type') ||
+                  allSearchArray[j][i].hasOwnProperty('adminDistrict')
+                ) {
+                  if (housePoint.hasOwnProperty(houses[k].id)) {
+                    // housePoint에 id가 있을 때
+                    housePoint[houses[k].id] += 3;
+                  } else {
+                    // housePoint에 id가 없을 때
+                    housePoint[houses[k].id] = 3;
+                  }
+
+                  // ! 필수 문장요소 가중치 부여
+                  if (
+                    splitedWords[i][splitedWords[i].length - 1] === '은' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '는' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '이' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '가'
+                  ) {
+                    // 주어와 서술어는 같이 처리된다. * 서술어가 ~하다/~다/~이다 의 형태로 검색될 가능성이 낮기 때문에 대부분 ~은의 형태로 사용된다.
+                    // 주어와 서술어의 가중치는 2점으로 같다.
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('주어/서술어 처리');
+                    housePoint[houses[k].id] += 2;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '을' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '를'
+                  ) {
+                    // 목적어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '에' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '로'
+                  ) {
+                    // 부사어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('부사어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else {
+                    // 그 외는 조사가 생략된 단어형태의 문장요소이며 이는 단어만으로 문장의 중요한 역할을 하는 부사어와 목적어이다.
+                    // 따라서 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('그 외: 부사어/목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  }
+                } else if (allSearchArray[j][i].hasOwnProperty('title')) {
+                  // 가중치 2 요소
+                  if (housePoint.hasOwnProperty(houses[k].id)) {
+                    // housePoint에 id가 있을 때
+                    housePoint[houses[k].id] += 2;
+                  } else {
+                    // housePoint에 id가 없을 때
+                    housePoint[houses[k].id] = 2;
+                  }
+
+                  // ! 필수 문장요소 가중치 부여
+                  if (
+                    splitedWords[i][splitedWords[i].length - 1] === '은' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '는' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '이' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '가'
+                  ) {
+                    // 주어와 서술어는 같이 처리된다. * 서술어가 ~하다/~다/~이다 의 형태로 검색될 가능성이 낮기 때문에 대부분 ~은의 형태로 사용된다.
+                    // 주어와 서술어의 가중치는 2점으로 같다.
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('주어/서술어 처리');
+                    housePoint[houses[k].id] += 2;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '을' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '를'
+                  ) {
+                    // 목적어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '에' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '로'
+                  ) {
+                    // 부사어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('부사어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else {
+                    // 그 외는 조사가 생략된 단어형태의 문장요소이며 이는 단어만으로 문장의 중요한 역할을 하는 부사어와 목적어이다.
+                    // 따라서 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('그 외: 부사어/목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  }
+                } else if (
+                  allSearchArray[j][i].hasOwnProperty('description') ||
+                  allSearchArray[j][i].hasOwnProperty('houseRule')
+                ) {
+                  // 가중치 1 요소
+                  if (housePoint.hasOwnProperty(houses[k].id)) {
+                    // housePoint에 id가 있을 때
+                    housePoint[houses[k].id] += 1;
+                  } else {
+                    // housePoint에 id가 없을 때
+                    housePoint[houses[k].id] = 1;
+                  }
+
+                  // ! 필수 문장요소 가중치 부여
+                  if (
+                    splitedWords[i][splitedWords[i].length - 1] === '은' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '는' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '이' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '가'
+                  ) {
+                    // 주어와 서술어는 같이 처리된다. * 서술어가 ~하다/~다/~이다 의 형태로 검색될 가능성이 낮기 때문에 대부분 ~은의 형태로 사용된다.
+                    // 주어와 서술어의 가중치는 2점으로 같다.
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('주어/서술어 처리');
+                    housePoint[houses[k].id] += 2;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '을' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '를'
+                  ) {
+                    // 목적어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else if (
+                    splitedWords[i][splitedWords[i].length - 1] === '에' ||
+                    splitedWords[i][splitedWords[i].length - 1] === '로'
+                  ) {
+                    // 부사어 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('부사어 처리');
+                    housePoint[houses[k].id] += 3;
+                  } else {
+                    // 그 외는 조사가 생략된 단어형태의 문장요소이며 이는 단어만으로 문장의 중요한 역할을 하는 부사어와 목적어이다.
+                    // 따라서 가중치 3점
+                    console.log(
+                      '쪼개진 검색어의 마지막 글자: ',
+                      splitedWords[i][splitedWords[i].length - 1],
+                    );
+                    console.log('그 외: 부사어/목적어 처리');
+                    housePoint[houses[k].id] += 3;
+                  }
+                }
+              }
+            }
+          }
+        }
+        console.log('매물별 가중치 합계:  ', housePoint);
+
+        // ! housePoint 중 높은 순으로 반복문으로 다시 검색하고 조인하여 순서대로 배열에 푸시한다.
+        // 높은 순으로 정렬
+        const keysSorted = Object.keys(housePoint).sort(function(a, b) {
+          return housePoint[b] - housePoint[a];
+        });
+        console.log('총점 내림차순 정렬: ', keysSorted);
+        // [ '56', '19', '48' ]
+
+        // 디비 검색
+        const findedHouses = [];
+        for (let i = 0; i < keysSorted.length; i++) {
+          const house = await getRepository(House).findOne({
+            relations: ['amenity', 'reviews', 'images'],
+            where: [{ id: Number(keysSorted[i]) }],
+          });
+          findedHouses.push(house);
+        }
+
+        // console.log(findedHouses);
+
+        // 배열을 avgRatingHelper를 이용해 avgRating 추가
+
+        const avgRatingAddedHouses = createAvgRatingHelper.multiple(
+          findedHouses,
+        );
+
+        res.status(200).json(avgRatingAddedHouses);
+      } catch (err) {
+        console.error('error is ', err);
+        res.status(500).json({ error: err });
+      }
     } else {
       // ! 단어형
       // ['부산']
 
       // 각 매물의 총점
-      const housePoint: any = {};
-      const temp = [];
+      const housePoint: { [Index: string]: number } = {};
 
-      // 검색
-      for (let i = 0; i < allSearchArray.length; i++) {
-        const houses = await getRepository(House).find({
-          where: allSearchArray[i],
-        });
+      try {
+        // 검색
+        for (let i = 0; i < allSearchArray.length; i++) {
+          const houses = await getRepository(House).find({
+            where: allSearchArray[i],
+          });
 
-        temp.push(houses);
-
-        if (houses.length > 0) {
-          // 매물이 하나 이상일 때
-          for (let j = 0; j < houses.length; j++) {
-            // 가중치 3 요소
-            if (
-              allSearchArray[i][0].hasOwnProperty('type') ||
-              allSearchArray[i][0].hasOwnProperty('adminDistrict')
-            ) {
-              if (housePoint.hasOwnProperty(houses[j].id)) {
-                // housePoint에 id가 있을 때
-                housePoint[houses[j].id] += 3;
-              } else {
-                // housePoint에 id가 없을 때
-                housePoint[houses[j].id] = 3;
-              }
-            } else if (allSearchArray[i][0].hasOwnProperty('title')) {
-              // 가중치 2 요소
-              if (housePoint.hasOwnProperty(houses[j].id)) {
-                // housePoint에 id가 있을 때
-                housePoint[houses[j].id] += 2;
-              } else {
-                // housePoint에 id가 없을 때
-                housePoint[houses[j].id] = 2;
-              }
-            } else if (
-              allSearchArray[i][0].hasOwnProperty('description') ||
-              allSearchArray[i][0].hasOwnProperty('houseRule')
-            ) {
-              // 가중치 1 요소
-              if (housePoint.hasOwnProperty(houses[j].id)) {
-                // housePoint에 id가 있을 때
-                housePoint[houses[j].id] += 1;
-              } else {
-                // housePoint에 id가 없을 때
-                housePoint[houses[j].id] = 1;
+          if (houses.length > 0) {
+            // 매물이 하나 이상일 때
+            for (let j = 0; j < houses.length; j++) {
+              // 가중치 3 요소
+              if (
+                allSearchArray[i][0].hasOwnProperty('type') ||
+                allSearchArray[i][0].hasOwnProperty('adminDistrict')
+              ) {
+                if (housePoint.hasOwnProperty(houses[j].id)) {
+                  // housePoint에 id가 있을 때
+                  housePoint[houses[j].id] += 3;
+                } else {
+                  // housePoint에 id가 없을 때
+                  housePoint[houses[j].id] = 3;
+                }
+              } else if (allSearchArray[i][0].hasOwnProperty('title')) {
+                // 가중치 2 요소
+                if (housePoint.hasOwnProperty(houses[j].id)) {
+                  // housePoint에 id가 있을 때
+                  housePoint[houses[j].id] += 2;
+                } else {
+                  // housePoint에 id가 없을 때
+                  housePoint[houses[j].id] = 2;
+                }
+              } else if (
+                allSearchArray[i][0].hasOwnProperty('description') ||
+                allSearchArray[i][0].hasOwnProperty('houseRule')
+              ) {
+                // 가중치 1 요소
+                if (housePoint.hasOwnProperty(houses[j].id)) {
+                  // housePoint에 id가 있을 때
+                  housePoint[houses[j].id] += 1;
+                } else {
+                  // housePoint에 id가 없을 때
+                  housePoint[houses[j].id] = 1;
+                }
               }
             }
           }
         }
-      }
-      console.log('houses ??? ', temp);
-      console.log('housePoint ??? ', housePoint);
+        console.log('매물별 가중치 합계: ? ', housePoint);
 
-      // ! housePoint 중 높은 순으로 반복문으로 다시 검색하고 조인하여 순서대로 배열에 푸시한다.
-      // 높은 순으로 정렬
-      const keysSorted = Object.keys(housePoint).sort(function(a, b) {
-        return housePoint[b] - housePoint[a];
-      });
-      console.log('keysSorted', keysSorted);
-      // [ '56', '19', '48' ]
-
-      // 디비 검색
-      const findedHouses = [];
-      for (let i = 0; i < keysSorted.length; i++) {
-        const house = await getRepository(House).findOne({
-          relations: ['amenity', 'reviews', 'images'],
-          where: [{ id: Number(keysSorted[i]) }],
+        // ! housePoint 중 높은 순으로 반복문으로 다시 검색하고 조인하여 순서대로 배열에 푸시한다.
+        // 높은 순으로 정렬
+        const keysSorted = Object.keys(housePoint).sort(function(a, b) {
+          return housePoint[b] - housePoint[a];
         });
-        findedHouses.push(house);
+        console.log('총점 내림차순 정렬: ', keysSorted);
+        // [ '56', '19', '48' ]
+
+        // 디비 검색
+        const findedHouses = [];
+        for (let i = 0; i < keysSorted.length; i++) {
+          const house = await getRepository(House).findOne({
+            relations: ['amenity', 'reviews', 'images'],
+            where: [{ id: Number(keysSorted[i]) }],
+          });
+          findedHouses.push(house);
+        }
+
+        // console.log(findedHouses);
+
+        // 배열을 avgRatingHelper를 이용해 avgRating 추가
+
+        const avgRatingAddedHouses = createAvgRatingHelper.multiple(
+          findedHouses,
+        );
+
+        res.status(200).json(avgRatingAddedHouses);
+      } catch (err) {
+        console.error('error is ', err);
+        res.status(500).json({ error: err });
       }
-
-      console.log(findedHouses);
-
-      // 배열을 avgRatingHelper를 이용해 avgRating 추가
-
-      const avgRatingAddedHouses = createAvgRatingHelper.multiple(findedHouses);
-
-      res.status(200).json(avgRatingAddedHouses);
     }
   } else {
     res.status(400).json({ error: 'searchWord가 존재하지 않습니다.' });
