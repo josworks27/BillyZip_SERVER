@@ -7,63 +7,65 @@ import { User } from '../entities/User';
 // * POST
 // * /forum
 export const PostForum = async (req: Request, res: Response) => {
-  const { messages, myId, hostId } = req.body;
+  // const { messages, myId, hostId } = req.body;
 
   try {
-    const hostInfo = await getRepository(User).findOne({
-      where: {
-        id: hostId,
-      },
-    });
+    // const hostInfo = await getRepository(User).findOne({
+    //   where: {
+    //     id: hostId,
+    //   },
+    // });
 
-    if (!hostInfo) {
-      res.status(404).json({ error: 'hostInfo가 존재하지 않습니다.' });
-      return;
-    }
+    // if (!hostInfo) {
+    //   res.status(404).json({ error: 'hostInfo가 존재하지 않습니다.' });
+    //   return;
+    // }
 
-    const forum = await getRepository(Forum).findOne({
-      where: {
-        hostId: hostId,
-      },
-    });
+    // const forum = await getRepository(Forum).findOne({
+    //   where: {
+    //     hostId: hostId,
+    //   },
+    // });
 
-    if (!forum) {
-      console.log('포럼 없을 때 실행');
-      const newForum = new Forum();
-      newForum.hostId = hostId;
-      newForum.forumLog = JSON.stringify(messages);
-      newForum.isActive = true;
-      await newForum.save();
-    } else {
-      console.log('포럼 있을 때 실행');
-      await getConnection()
-        .createQueryBuilder()
-        .update(Forum)
-        .set({ forumLog: JSON.stringify(messages) })
-        .where('hostId = :hostId', { hostId: hostId })
-        .execute();
-    }
+    // if (!forum) {
+    //   console.log('포럼 없을 때 실행');
+    //   const newForum = new Forum();
+    //   newForum.hostId = hostId;
+    //   newForum.forumLog = JSON.stringify(messages);
+    //   newForum.isActive = true;
+    //   await newForum.save();
+    // } else {
+    //   console.log('포럼 있을 때 실행');
+    //   await getConnection()
+    //     .createQueryBuilder()
+    //     .update(Forum)
+    //     .set({ forumLog: JSON.stringify(messages) })
+    //     .where('hostId = :hostId', { hostId: hostId })
+    //     .execute();
+    // }
 
-    const joinForum = await getRepository(JoinForum).findOne({
-      where: {
-        userId: myId,
-        hostId: hostId,
-      },
-    });
+    // const joinForum = await getRepository(JoinForum).findOne({
+    //   where: {
+    //     userId: myId,
+    //     hostId: hostId,
+    //   },
+    // });
 
-    if (!joinForum) {
-      console.log('조인포럼 없을 때 실행');
-      const newJoinForum = new JoinForum();
-      newJoinForum.userId = myId;
-      newJoinForum.hostId = hostId;
-      newJoinForum.hostName = hostInfo.name;
-      newJoinForum.isActive = true;
-      await newJoinForum.save();
-    } else {
-      console.log('조인포럼 있을 때 실행');
-      res.sendStatus(200);
-      return;
-    }
+    // if (!joinForum) {
+    //   console.log('조인포럼 없을 때 실행');
+    //   const newJoinForum = new JoinForum();
+    //   newJoinForum.userId = myId;
+    //   newJoinForum.hostId = hostId;
+    //   newJoinForum.hostName = hostInfo.name;
+    //   newJoinForum.isActive = true;
+    //   await newJoinForum.save();
+    // } else {
+    //   console.log('조인포럼 있을 때 실행');
+    //   res.sendStatus(200);
+    //   return;
+    // }
+
+    console.log('로직 변경으로 안쓰임(삭제예정)');
 
     res.sendStatus(200);
   } catch (err) {
