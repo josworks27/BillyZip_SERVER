@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { getConnection, getRepository } from 'typeorm';
 import { Payment } from '../entities/Payment';
-import twilioHelper from '../util/twilioHelper';
+import twilioHelper from '../utils/twilioHelper';
 
 // * POST
 // * /payment

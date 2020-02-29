@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as usersController from '../controllers/users';
-import { authChecker } from '../middlewares/authChecker';
+import { authChecker } from '../middleware/authChecker';
 export const usersRouter = Router();
 
 usersRouter.post('/signup', usersController.PostSignup);

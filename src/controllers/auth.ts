@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import twilioHelper from '../util/twilioHelper';
+import twilioHelper from '../utils/twilioHelper';
 
 let tempAuthObj: { [index: number]: number };
 

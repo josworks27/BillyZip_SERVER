@@ -5,7 +5,7 @@ import * as multer from 'multer';
 import * as multerS3 from 'multer-s3';
 import * as path from 'path';
 import * as AWS from 'aws-sdk';
-import { authChecker } from '../middlewares/authChecker';
+import { authChecker } from '../middleware/authChecker';
 
 export const housesRouter = Router();
 

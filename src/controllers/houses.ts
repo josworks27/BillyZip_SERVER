@@ -14,9 +14,9 @@ import {
   LessThanOrEqual,
   Like,
 } from 'typeorm';
-import convertHouseProperties from '../util/convertHouseProperties';
-import createAvgRatingHelper from '../util/avgRatingHelper';
-import ratingRangeHelper from '../util/ratingRangeHelper';
+import convertHouseProperties from '../utils/convertHouseProperties';
+import createAvgRatingHelper from '../utils/avgRatingHelper';
+import ratingRangeHelper from '../utils/ratingRangeHelper';
 
 // * POST
 // * /houses
