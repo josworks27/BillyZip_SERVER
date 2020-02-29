@@ -5,7 +5,6 @@ import { Forum } from './entities/Forum';
 import { JoinForum } from './entities/JoinForum';
 import { User } from './entities/User';
 
-// ! Create Socket IO module
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 
@@ -19,13 +18,12 @@ io.on('connection', (socket: any) => {
 
   socket.on(
     'chat',
-    async (myId: string, userId: string, msg: string | number, name: string) => {
-      // DB에서 로그 불러오고 새로 들어온 메세지를 콘캣으로 추가한다.
-      // 디비에 업데이트한다.
-      // 메세지와 네임을 소켓서버로 보내준다.
-
-      console.log('!?', msg);
-
+    async (
+      myId: string,
+      userId: string,
+      msg: string | number,
+      name: string,
+    ) => {
       const hostInfo = await getRepository(User).findOne({
         where: {
           id: userId,
@@ -43,22 +41,18 @@ io.on('connection', (socket: any) => {
         },
       });
 
-      console.log('log', log);
-
       if (!log) {
         console.log('포럼 없을 때 실행');
         const newForum = new Forum();
         newForum.hostId = Number(userId);
-        newForum.forumLog = JSON.stringify([{name, msg}]);
+        newForum.forumLog = JSON.stringify([{ name, msg }]);
         newForum.isActive = true;
         await newForum.save();
-      // }
+        // }
       } else {
         console.log('포럼 있을 때 실행');
 
-        const addedLog = JSON.parse(log.forumLog).concat([{name, msg}]);
-
-        console.log('added', addedLog);
+        const addedLog = JSON.parse(log.forumLog).concat([{ name, msg }]);
 
         await getConnection()
           .createQueryBuilder()
@@ -74,7 +68,7 @@ io.on('connection', (socket: any) => {
           hostId: userId,
         },
       });
-  
+
       if (!joinForum) {
         console.log('조인포럼 없을 때 실행');
         const newJoinForum = new JoinForum();
@@ -86,7 +80,6 @@ io.on('connection', (socket: any) => {
       } else {
         console.log('조인포럼 있을 때 실행');
       }
-      
 
       io.to(userId).emit('chat', { name, msg });
     },

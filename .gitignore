@@ -10,6 +10,7 @@ src/config/awsconfig.json
 
 # dotenv
 .env
+.env copy
 
 # TypeORM
 ormconfig_sample.json
