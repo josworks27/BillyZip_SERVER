@@ -5,7 +5,7 @@ import * as multer from 'multer';
 import * as multerS3 from 'multer-s3';
 import * as path from 'path';
 import * as AWS from 'aws-sdk';
-import { authChecker } from '../middlewares/authChecker';
+import { authChecker } from '../middleware/authChecker';
 
 export const housesRouter = Router();
 
@@ -41,5 +41,5 @@ housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController
 housesRouter.post('/:id/review', authChecker, reviewController.postReview);
-housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
+// housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
 housesRouter.delete('/:id/review/:reviewId', authChecker, reviewController.deleteReview);

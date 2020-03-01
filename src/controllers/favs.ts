@@ -3,7 +3,7 @@ import { getConnection, getRepository } from 'typeorm';
 import { User } from '../entities/User';
 import { Favorite } from '../entities/Favorite';
 import { House } from '../entities/House';
-import createAvgRatingHelper from '../util/avgRatingHelper';
+import createAvgRatingHelper from '../utils/avgRatingHelper';
 
 // * POST
 // * /favs

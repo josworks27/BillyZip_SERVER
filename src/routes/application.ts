@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authChecker } from '../middlewares/authChecker';
+import { authChecker } from '../middleware/authChecker';
 import * as applicationController from '../controllers/application';
 export const applicationRouter = Router();
 
