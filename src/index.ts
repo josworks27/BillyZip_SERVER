@@ -38,7 +38,7 @@ app.use(
 app.use(morgan('dev'));
 app.use(
   cors({
-    origin: ['http://192.168.219.104'],
+    origin: ['http://172.30.50.202'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   }),

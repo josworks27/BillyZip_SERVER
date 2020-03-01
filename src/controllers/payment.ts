@@ -21,7 +21,15 @@ export const PostPayment = async (req: Request, res: Response) => {
       .where('id = :id', { id: userId })
       .execute();
 
-    const currentUser = await User.findOne({ id: userId });
+    const currentUser = await getRepository(User)
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.name'
+      ])
+      .addSelect(['user.mobile'])
+      .where('user.id = :id', { id: userId })
+      .getOne();
 
     if (!currentUser) {
       res.status(404).json({ error: 'currentUser가 존재하지 않습니다.' });
@@ -56,6 +64,12 @@ export const GetPayment = async (req: Request, res: Response) => {
   try {
     const payments = await getRepository(Payment)
       .createQueryBuilder('payment')
+      .select([
+        'payment.id',
+        'payment.paymentDate',
+        'payment.paymentOption',
+        'payment.subscribePlan',
+      ])
       .leftJoinAndSelect('payment.user', 'user')
       .where('payment.userId = :userId', { userId: userId })
       .orderBy('payment.created_at', 'DESC')

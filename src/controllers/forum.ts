@@ -86,7 +86,11 @@ export const PostForumRoom = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json(forumLog);
+    if (!forumLog) {
+      res.status(404).json({ error: 'forumLog가 존재하지 않습니다.' });
+    } else {
+      res.status(200).json(forumLog);
+    }
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });
@@ -104,7 +108,12 @@ export const PostForumList = async (req: Request, res: Response) => {
         userId: myId,
       },
     });
-    res.status(200).json(forumList);
+
+    if (forumList.length === 0) {
+      res.status(404).json({ error: 'forumList가 존재하지 않습니다.' });
+    } else {
+      res.status(200).json(forumList);
+    }
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });

@@ -39,25 +39,25 @@ export const postReview = async (req: Request, res: Response) => {
   }
 };
 
-// * PUT
-// * /houses/:id/review
-export const putReview = async (req: Request, res: Response) => {
-  const { commentId, comment, rating } = req.body;
+// // * PUT
+// // * /houses/:id/review
+// export const putReview = async (req: Request, res: Response) => {
+//   const { commentId, comment, rating } = req.body;
 
-  try {
-    const putResult = await getConnection()
-      .createQueryBuilder()
-      .update(Review)
-      .set({ comment: comment, rating: rating })
-      .where('id = :id', { id: commentId })
-      .execute();
+//   try {
+//     const putResult = await getConnection()
+//       .createQueryBuilder()
+//       .update(Review)
+//       .set({ comment: comment, rating: rating })
+//       .where('id = :id', { id: commentId })
+//       .execute();
 
-    res.status(200).json(putResult);
-  } catch (err) {
-    console.error('error is ', err);
-    res.status(500).json({ error: err });
-  }
-};
+//     res.status(200).json(putResult);
+//   } catch (err) {
+//     console.error('error is ', err);
+//     res.status(500).json({ error: err });
+//   }
+// };
 
 // * DELETE
 // * /houses/:id/review/:reviewId
@@ -73,8 +73,6 @@ export const deleteReview = async (req: Request, res: Response) => {
       .where('id = :id', { id: reviewId })
       .andWhere('userId = :userId', { userId: userId })
       .execute();
-
-    console.log(deleteResult);
 
     if (deleteResult.affected === 1) {
       res.sendStatus(200);

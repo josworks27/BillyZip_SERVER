@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { House } from '../entities/House';
-import { getConnection, getRepository } from 'typeorm';
+import { getConnection, getRepository, Repository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import saltRounds from '../config/bcrypt';
@@ -25,9 +25,9 @@ export const PostSignup = async (req: Request, res: Response) => {
       user.name = name;
       user.mobile = mobile;
       user.gender = gender;
-      user.isActive = true;
       user.birth = birth;
-      user.expiry = 30;
+      user.expiry = 0;
+      user.isActive = true;
       await user.save();
       res.status(200).json('회원가입이 완료되었습니다');
     }
@@ -43,7 +43,12 @@ export const PostSignin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const userEmail = await User.findOne({ email: email });
+    const userEmail = await getRepository(User)
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.email', 'user.name'])
+      .addSelect(['user.password'])
+      .where('user.email = :email', { email: email })
+      .getOne();
 
     if (userEmail) {
       const checkPwd = await bcrypt.compare(password, userEmail.password);
@@ -77,14 +82,14 @@ export const PostSignin = async (req: Request, res: Response) => {
   }
 };
 
-// * GET
-// * /users/signout
-export const GetSignout = (req: Request, res: Response) => {
-  res.send('signOut success!');
-};
+// // * GET
+// // * /users/signout
+// export const GetSignout = (req: Request, res: Response) => {
+//   res.send('signOut success!');
+// };
 
 // * GET
-// * /users/currentInfo
+// * /users/current-info
 export const GetCurrentInfo = async (req: Request, res: Response) => {
   const userId = Number(req.headers['x-userid-header']);
 
@@ -149,14 +154,8 @@ export const GetMyInfo = async (req: Request, res: Response) => {
   try {
     const myInfo = await getConnection()
       .createQueryBuilder()
-      .select([
-        'user.name',
-        'user.gender',
-        'user.birth',
-        'user.email',
-        'user.mobile',
-        'user.password',
-      ])
+      .select(['user.name', 'user.gender', 'user.birth', 'user.email'])
+      .addSelect(['user.mobile', 'user.password'])
       .from(User, 'user')
       .where('user.id =:id', { id: userId })
       .getOne();
@@ -181,7 +180,7 @@ export const PutMyInfo = async (req: Request, res: Response) => {
   if (
     name === undefined ||
     gender === undefined ||
-    gender === undefined ||
+    birth === undefined ||
     password === undefined ||
     email === undefined ||
     mobile === undefined
@@ -216,9 +215,9 @@ export const PutMyInfo = async (req: Request, res: Response) => {
 // * DELETE
 // * users/my-info
 export const DeleteMyInfo = async (req: Request, res: Response) => {
-  try {
-    const userId = Number(req.headers['x-userid-header']);
+  const userId = Number(req.headers['x-userid-header']);
 
+  try {
     const deletedMyInfo = await getConnection()
       .createQueryBuilder()
       .delete()
@@ -238,13 +237,13 @@ export const DeleteMyInfo = async (req: Request, res: Response) => {
 };
 
 // * PUT
-// * /auth/mobile
+// * /users/mobile
 export const PutMobile = async (req: Request, res: Response) => {
   const { userPhoneNum } = req.body;
   const userId = Number(req.headers['x-userid-header']);
 
   try {
-    await getConnection()
+    const PutUserInfo = await getConnection()
       .createQueryBuilder()
       .update(User)
       .set({
@@ -253,7 +252,11 @@ export const PutMobile = async (req: Request, res: Response) => {
       .where('user.id =:id', { id: userId })
       .execute();
 
-    res.sendStatus(200);
+    if (PutUserInfo.raw.affectedRows === 0) {
+      res.status(404).json({ error: '해당하는 유저가 존재하지 않습니다.' });
+    } else {
+      res.sendStatus(200);
+    }
   } catch (err) {
     console.error('error is ', err);
     res.status(500).json({ error: err });

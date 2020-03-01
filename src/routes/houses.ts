@@ -41,5 +41,5 @@ housesRouter.delete('/:id', authChecker, housesController.DeleteHouse);
 
 // reviewController
 housesRouter.post('/:id/review', authChecker, reviewController.postReview);
-housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
+// housesRouter.put('/:id/review/:id', authChecker, reviewController.putReview);
 housesRouter.delete('/:id/review/:reviewId', authChecker, reviewController.deleteReview);
