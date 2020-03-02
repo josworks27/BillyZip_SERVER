@@ -102,3 +102,77 @@ ESLint, Prettier를 이용하여 코드 스타일 통일
 
 ![아키텍쳐](https://user-images.githubusercontent.com/53073832/75628466-906b1d00-5c1c-11ea-95e3-289f30a4a9b6.png)
 
+
+
+
+### Directory Structure
+
+```bash
+ .
+├── .eslintignore
+├── .eslintrc
+├── .gitignore
+├── .prettierrc
+├── README.md
+├── node_modules
+├── ormconfig.js
+├── package-lock.json
+├── package.json
+├── src
+│   ├── config
+│   │   ├── awsconfig.json
+│   │   ├── bcrypt.ts
+│   │   └── jwt.ts
+│   ├── controllers
+│   │   ├── application.ts
+│   │   ├── auth.ts
+│   │   ├── favs.ts
+│   │   ├── forum.ts
+│   │   ├── houses.ts
+│   │   ├── payment.ts
+│   │   ├── review.ts
+│   │   └── users.ts
+│   ├── entities
+│   │   ├── Amenity.ts
+│   │   ├── Application.ts
+│   │   ├── Favorite.ts
+│   │   ├── Forum.ts
+│   │   ├── House.ts
+│   │   ├── Image.ts
+│   │   ├── JoinForum.ts
+│   │   ├── Payment.ts
+│   │   ├── Review.ts
+│   │   └── User.ts
+│   ├── index.ts
+│   ├── middleware
+│   │   └── authChecker.ts
+│   ├── routes
+│   │   ├── application.ts
+│   │   ├── auth.ts
+│   │   ├── favs.ts
+│   │   ├── forum.ts
+│   │   ├── houses.ts
+│   │   ├── payment.ts
+│   │   └── users.ts
+│   ├── server.ts
+│   ├── socket.ts
+│   └── utils
+│       ├── avgRatingHelper.ts
+│       ├── convertHouseProperties.ts
+│       ├── decodeHelper.ts
+│       ├── ratingRangeHelper.ts
+│       └── twilioHelper.ts
+└── tsconfig.json
+```
+
+### API Documentation
+
+https://documenter.getpostman.com/view/9956944/SzKZsbag?version=latest
+
+### DB Scheme
+
+DB Scheme Description: 
+https://docs.google.com/spreadsheets/d/1vzdjWw64ekSy2aPq3-5ePWHsK1ncYsu8RKfrPqGKWVU/edit?usp=sharing
+
+![billyZip](/Users/joseongcheol/Desktop/screen_shot/billyZip.png)
+
