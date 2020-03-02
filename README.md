@@ -174,5 +174,6 @@ https://documenter.getpostman.com/view/9956944/SzKZsbag?version=latest
 DB Scheme Description: 
 https://docs.google.com/spreadsheets/d/1vzdjWw64ekSy2aPq3-5ePWHsK1ncYsu8RKfrPqGKWVU/edit?usp=sharing
 
-![billyZip](/Users/joseongcheol/Desktop/screen_shot/billyZip.png)
+![billyZip](https://user-images.githubusercontent.com/48130830/75641474-bbd12480-5c7b-11ea-95b6-95be0e2f0809.png)
+
 
