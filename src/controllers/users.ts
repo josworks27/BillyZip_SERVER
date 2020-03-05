@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { User } from '../entities/User';
 import { House } from '../entities/House';
-import { getConnection, getRepository, Repository } from 'typeorm';
+import { getConnection, getRepository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwtObj from '../config/jwt';
 import saltRounds from '../config/bcrypt';
