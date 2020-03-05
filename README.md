@@ -24,6 +24,7 @@
     - 유저에게 보다 적합한 부동산 매물 제공하기 위해 퀵 서치 & 맵 서치 컴포넌트 구현
     - 필요한 요건의 매물을 찾을 수 있도록 필터링 컴포넌트 구현
   - Back
+    - 전체적인 서버 구조 및 기능 구현, REST API 구조 구현
     - Typescript & Express로 @REST API를 활용하여 하우스, 리뷰, 유저정보의 CRUD 기능 구현
     - JWT 토큰 인증 과정을 Express Middleware로 하는 인증체계 구축
     - Twilio Programmable SMS API를 이용한 인증번호 문자 전송 및 인증 확인 모듈 구축
