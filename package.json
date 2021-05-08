@@ -36,7 +36,7 @@
     "reflect-metadata": "^0.1.10",
     "socket.io": "^2.3.0",
     "twilio": "^3.39.4",
-    "typeorm": "0.2.22"
+    "typeorm": "0.2.25"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
